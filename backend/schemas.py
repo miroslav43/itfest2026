@@ -39,6 +39,12 @@ class RoleUpdate(BaseModel):
     role: RoleType
 
 
+class AdminUserCreate(BaseModel):
+    email: EmailStr
+    password: str
+    role: RoleType = "caregiver"
+
+
 # ─── Canes ────────────────────────────────────────────────────────────────────
 
 class CaneCreate(BaseModel):
@@ -77,6 +83,14 @@ class DestinationIn(BaseModel):
     latitude: float
     longitude: float
     cane_id: str
+
+
+class CaregiverDestinationIn(BaseModel):
+    blind_user_id: str
+    cane_id: str
+    name: str
+    latitude: float
+    longitude: float
 
 
 class DestinationOut(BaseModel):

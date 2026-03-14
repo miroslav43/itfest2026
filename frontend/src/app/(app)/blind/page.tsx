@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { api, ApiError } from "@/lib/api";
+import { api } from "@/lib/api";
 import { clearToken } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 import type { Cane, Location, Destination } from "@/types";
@@ -31,12 +31,6 @@ export default function BlindPage() {
   const [cane, setCane] = useState<Cane | null>(null);
   const [location, setLocation] = useState<Location | null>(null);
   const [destinations, setDestinations] = useState<Destination[]>([]);
-  const [showAddDest, setShowAddDest] = useState(false);
-  const [destName, setDestName] = useState("");
-  const [destLat, setDestLat] = useState("");
-  const [destLng, setDestLng] = useState("");
-  const [destError, setDestError] = useState("");
-  const [loadingDest, setLoadingDest] = useState(false);
   const wasOnlineRef = useRef(false);
 
   const isOnline =
@@ -52,7 +46,7 @@ export default function BlindPage() {
       if (c) speak(`Baston conectat: ${c.name}`);
     }).catch(() => {});
 
-    api.get<Destination[]>("/destinations/").then(setDestinations).catch(() => {});
+    api.get<Destination[]>("/destinations/mine").then(setDestinations).catch(() => {});
   }, []);
 
   // Poll location
@@ -81,29 +75,6 @@ export default function BlindPage() {
     wasOnlineRef.current = isOnline;
   }, [isOnline, cane]);
 
-  async function handleAddDestination(e: React.FormEvent) {
-    e.preventDefault();
-    setDestError("");
-    if (!cane) return;
-    setLoadingDest(true);
-    try {
-      const dest = await api.post<Destination>("/destinations/", {
-        name: destName,
-        latitude: parseFloat(destLat),
-        longitude: parseFloat(destLng),
-        cane_id: cane.id,
-      });
-      setDestinations((prev) => [dest, ...prev]);
-      setDestName(""); setDestLat(""); setDestLng("");
-      setShowAddDest(false);
-      speak(`Destinație adăugată: ${dest.name}`);
-    } catch (err) {
-      setDestError(err instanceof ApiError ? err.detail : "Eroare.");
-    } finally {
-      setLoadingDest(false);
-    }
-  }
-
   async function handleActivate(id: string, name: string) {
     try {
       const updated = await api.put<Destination>(`/destinations/${id}/activate`, {});
@@ -111,14 +82,6 @@ export default function BlindPage() {
         prev.map((d) => ({ ...d, active: d.id === updated.id }))
       );
       speak(`Destinație activată: ${name}`);
-    } catch { /* ignore */ }
-  }
-
-  async function handleDeleteDest(id: string) {
-    try {
-      await api.delete(`/destinations/${id}`);
-      setDestinations((prev) => prev.filter((d) => d.id !== id));
-      speak("Destinație ștearsă.");
     } catch { /* ignore */ }
   }
 
@@ -187,91 +150,13 @@ export default function BlindPage() {
           </section>
         )}
 
-        {/* Destinations list */}
+        {/* Destinations list — read-only, only activate */}
         <section>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-xl font-bold text-gray-200">Destinații</h2>
-            <button
-              onClick={() => { setShowAddDest(!showAddDest); speak("Adaugă destinație nouă"); }}
-              className="bg-blue-600 hover:bg-blue-500 text-white font-bold px-5 py-2.5 rounded-2xl text-lg transition-colors"
-              aria-label="Adaugă destinație"
-            >
-              + Adaugă
-            </button>
-          </div>
+          <h2 className="text-xl font-bold text-gray-200 mb-3">Destinații disponibile</h2>
 
-          {/* Add form */}
-          {showAddDest && (
-            <form onSubmit={handleAddDestination} className="bg-gray-800 rounded-2xl p-5 mb-4 flex flex-col gap-3">
-              {destError && (
-                <p className="text-red-400 text-sm">{destError}</p>
-              )}
-              <label className="flex flex-col gap-1 text-gray-300 text-base font-medium">
-                Nume destinație
-                <input
-                  type="text"
-                  className="bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-white text-lg outline-none focus:border-blue-400"
-                  value={destName}
-                  onChange={(e) => setDestName(e.target.value)}
-                  placeholder="ex: Acasă, Spital"
-                  required
-                  autoFocus
-                />
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                <label className="flex flex-col gap-1 text-gray-300 text-base font-medium">
-                  Latitudine
-                  <input
-                    type="number"
-                    step="any"
-                    className="bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-white text-lg outline-none focus:border-blue-400"
-                    value={destLat}
-                    onChange={(e) => setDestLat(e.target.value)}
-                    placeholder="44.4268"
-                    required
-                  />
-                </label>
-                <label className="flex flex-col gap-1 text-gray-300 text-base font-medium">
-                  Longitudine
-                  <input
-                    type="number"
-                    step="any"
-                    className="bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-white text-lg outline-none focus:border-blue-400"
-                    value={destLng}
-                    onChange={(e) => setDestLng(e.target.value)}
-                    placeholder="26.1025"
-                    required
-                  />
-                </label>
-              </div>
-              <button
-                onClick={() => {
-                  if (navigator.geolocation) {
-                    speak("Se obține locația curentă");
-                    navigator.geolocation.getCurrentPosition((pos) => {
-                      setDestLat(pos.coords.latitude.toFixed(7));
-                      setDestLng(pos.coords.longitude.toFixed(7));
-                    });
-                  }
-                }}
-                type="button"
-                className="py-3 bg-gray-700 hover:bg-gray-600 rounded-xl text-gray-200 text-base font-medium transition-colors"
-              >
-                📍 Folosește locația mea actuală
-              </button>
-              <button
-                type="submit"
-                disabled={loadingDest}
-                className="py-4 bg-green-700 hover:bg-green-600 disabled:opacity-50 rounded-2xl text-xl font-bold transition-colors"
-              >
-                {loadingDest ? "Se salvează…" : "Salvează destinație"}
-              </button>
-            </form>
-          )}
-
-          {destinations.length === 0 && !showAddDest && (
+          {destinations.length === 0 && (
             <p className="text-gray-500 text-lg text-center py-6">
-              Nu ai nicio destinație salvată.
+              Aparținătorul tău nu a adăugat încă nicio destinație.
             </p>
           )}
 
@@ -288,25 +173,21 @@ export default function BlindPage() {
                   <p className="text-gray-400 text-sm mt-0.5">
                     {dest.latitude.toFixed(5)}, {dest.longitude.toFixed(5)}
                   </p>
-                </div>
-                <div className="flex gap-2 shrink-0">
-                  {!dest.active && (
-                    <button
-                      onClick={() => handleActivate(dest.id, dest.name)}
-                      className="bg-blue-700 hover:bg-blue-600 text-white px-3 py-2 rounded-xl text-sm font-semibold transition-colors"
-                      aria-label={`Activează ${dest.name}`}
-                    >
-                      ✓ Activează
-                    </button>
+                  {dest.active && (
+                    <span className="inline-block mt-1 text-xs font-semibold text-blue-300 uppercase tracking-wider">
+                      ✓ Activă
+                    </span>
                   )}
-                  <button
-                    onClick={() => handleDeleteDest(dest.id)}
-                    className="bg-gray-700 hover:bg-red-700 text-gray-300 hover:text-white px-3 py-2 rounded-xl text-sm transition-colors"
-                    aria-label={`Șterge ${dest.name}`}
-                  >
-                    ✕
-                  </button>
                 </div>
+                {!dest.active && (
+                  <button
+                    onClick={() => handleActivate(dest.id, dest.name)}
+                    className="bg-blue-700 hover:bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors shrink-0"
+                    aria-label={`Activează ${dest.name}`}
+                  >
+                    ✓ Activează
+                  </button>
+                )}
               </li>
             ))}
           </ul>

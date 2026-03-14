@@ -26,6 +26,12 @@ interface Stats {
   total_canes: number;
 }
 
+interface CreateUserForm {
+  email: string;
+  password: string;
+  role: Role;
+}
+
 export default function AdminPage() {
   const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
@@ -35,21 +41,33 @@ export default function AdminPage() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [tab, setTab] = useState<"users" | "canes">("users");
 
+  // Create user modal
+  const [showCreate, setShowCreate] = useState(false);
+  const [form, setForm] = useState<CreateUserForm>({ email: "", password: "", role: "caregiver" });
+  const [createError, setCreateError] = useState("");
+  const [createLoading, setCreateLoading] = useState(false);
+
   useEffect(() => {
     const role = getRole();
     if (role !== "admin") { router.replace("/"); return; }
+    loadData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [router]);
 
-    Promise.all([
-      api.get<User[]>("/admin/users"),
-      api.get<Cane[]>("/admin/canes"),
-      api.get<Stats>("/admin/stats"),
-    ]).then(([u, c, s]) => {
+  async function loadData() {
+    try {
+      const [u, c, s] = await Promise.all([
+        api.get<User[]>("/admin/users"),
+        api.get<Cane[]>("/admin/canes"),
+        api.get<Stats>("/admin/stats"),
+      ]);
       setUsers(u);
       setCanes(c);
       setStats(s);
+    } finally {
       setLoading(false);
-    }).catch(() => setLoading(false));
-  }, [router]);
+    }
+  }
 
   async function handleRoleChange(userId: string, newRole: Role) {
     setUpdatingId(userId);
@@ -60,6 +78,34 @@ export default function AdminPage() {
       alert(err instanceof ApiError ? err.detail : "Eroare la schimbarea rolului.");
     } finally {
       setUpdatingId(null);
+    }
+  }
+
+  async function handleDelete(userId: string, email: string) {
+    if (!confirm(`Ștergi contul ${email}? Această acțiune nu poate fi anulată.`)) return;
+    try {
+      await api.delete(`/admin/users/${userId}`);
+      setUsers((prev) => prev.filter((u) => u.id !== userId));
+      setStats((s) => s ? { ...s, total_users: s.total_users - 1 } : s);
+    } catch (err) {
+      alert(err instanceof ApiError ? err.detail : "Eroare la ștergere.");
+    }
+  }
+
+  async function handleCreateUser(e: React.FormEvent) {
+    e.preventDefault();
+    setCreateError("");
+    setCreateLoading(true);
+    try {
+      const user = await api.post<User>("/admin/users", form);
+      setUsers((prev) => [...prev, user]);
+      setStats((s) => s ? { ...s, total_users: s.total_users + 1 } : s);
+      setForm({ email: "", password: "", role: "caregiver" });
+      setShowCreate(false);
+    } catch (err) {
+      setCreateError(err instanceof ApiError ? err.detail : "A apărut o eroare.");
+    } finally {
+      setCreateLoading(false);
     }
   }
 
@@ -105,20 +151,31 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* Tabs */}
-        <div className="flex gap-0 mb-4 border border-gray-200 rounded-xl overflow-hidden w-fit">
-          <button
-            onClick={() => setTab("users")}
-            className={`px-5 py-2 text-sm font-medium transition-colors ${tab === "users" ? "bg-blue-600 text-white" : "text-gray-600 hover:bg-gray-50"}`}
-          >
-            Utilizatori ({users.length})
-          </button>
-          <button
-            onClick={() => setTab("canes")}
-            className={`px-5 py-2 text-sm font-medium transition-colors ${tab === "canes" ? "bg-blue-600 text-white" : "text-gray-600 hover:bg-gray-50"}`}
-          >
-            Bastoane ({canes.length})
-          </button>
+        {/* Tabs + create button */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex gap-0 border border-gray-200 rounded-xl overflow-hidden w-fit">
+            <button
+              onClick={() => setTab("users")}
+              className={`px-5 py-2 text-sm font-medium transition-colors ${tab === "users" ? "bg-blue-600 text-white" : "text-gray-600 hover:bg-gray-50"}`}
+            >
+              Utilizatori ({users.length})
+            </button>
+            <button
+              onClick={() => setTab("canes")}
+              className={`px-5 py-2 text-sm font-medium transition-colors ${tab === "canes" ? "bg-blue-600 text-white" : "text-gray-600 hover:bg-gray-50"}`}
+            >
+              Bastoane ({canes.length})
+            </button>
+          </div>
+
+          {tab === "users" && (
+            <button
+              onClick={() => { setShowCreate(true); setCreateError(""); }}
+              className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors"
+            >
+              + Adaugă utilizator
+            </button>
+          )}
         </div>
 
         {/* Users table */}
@@ -131,6 +188,7 @@ export default function AdminPage() {
                   <th className="text-left px-4 py-3 font-semibold text-gray-600">Rol curent</th>
                   <th className="text-left px-4 py-3 font-semibold text-gray-600">Schimbă rol</th>
                   <th className="text-left px-4 py-3 font-semibold text-gray-600">Înregistrat</th>
+                  <th className="px-4 py-3"></th>
                 </tr>
               </thead>
               <tbody>
@@ -156,6 +214,15 @@ export default function AdminPage() {
                     </td>
                     <td className="px-4 py-3 text-gray-400 text-xs">
                       {new Date(user.created_at).toLocaleDateString("ro-RO")}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <button
+                        onClick={() => handleDelete(user.id, user.email)}
+                        className="text-red-400 hover:text-red-600 text-xs px-2 py-1 rounded hover:bg-red-50 transition-colors"
+                        title="Șterge utilizator"
+                      >
+                        Șterge
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -190,6 +257,75 @@ export default function AdminPage() {
           </div>
         )}
       </div>
+
+      {/* Create user modal */}
+      {showCreate && (
+        <div
+          className="fixed inset-0 z-40 flex items-center justify-center bg-black/45 px-4"
+          onClick={(e) => e.target === e.currentTarget && setShowCreate(false)}
+        >
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-blue-800">Adaugă utilizator nou</h2>
+              <button onClick={() => setShowCreate(false)} className="text-gray-400 hover:text-gray-600">✕</button>
+            </div>
+
+            {createError && (
+              <div className="mb-3 px-3 py-2 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
+                {createError}
+              </div>
+            )}
+
+            <form onSubmit={handleCreateUser} className="flex flex-col gap-3">
+              <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
+                Email
+                <input
+                  type="email"
+                  className="px-3 py-2 border border-gray-200 rounded-lg outline-none focus:border-blue-500 text-sm"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  placeholder="utilizator@email.com"
+                  required
+                  autoFocus
+                />
+              </label>
+
+              <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
+                Parolă
+                <input
+                  type="password"
+                  className="px-3 py-2 border border-gray-200 rounded-lg outline-none focus:border-blue-500 text-sm"
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  placeholder="min. 6 caractere"
+                  required
+                />
+              </label>
+
+              <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
+                Rol
+                <select
+                  className="px-3 py-2 border border-gray-200 rounded-lg outline-none focus:border-blue-500 text-sm bg-white"
+                  value={form.role}
+                  onChange={(e) => setForm({ ...form, role: e.target.value as Role })}
+                >
+                  <option value="caregiver">Aparținător</option>
+                  <option value="blind_user">Nevăzător</option>
+                  <option value="admin">Administrator</option>
+                </select>
+              </label>
+
+              <button
+                type="submit"
+                disabled={createLoading}
+                className="py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold rounded-lg text-sm transition-colors mt-1"
+              >
+                {createLoading ? "Se creează…" : "Creează cont"}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

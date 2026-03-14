@@ -2,7 +2,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import get_db
-from auth import get_current_user
+from auth import get_current_user, hash_password
 import models
 import schemas
 
@@ -47,6 +47,42 @@ def list_all_canes(
     _: models.User = Depends(require_admin),
 ):
     return db.query(models.Cane).order_by(models.Cane.created_at).all()
+
+
+@router.post("/users", response_model=schemas.UserOut, summary="Creează cont nou (admin)")
+def create_user(
+    data: schemas.AdminUserCreate,
+    db: Session = Depends(get_db),
+    _: models.User = Depends(require_admin),
+):
+    if db.query(models.User).filter(models.User.email == data.email).first():
+        raise HTTPException(status_code=400, detail="Email-ul este deja folosit.")
+    if len(data.password) < 6:
+        raise HTTPException(status_code=400, detail="Parola trebuie să aibă cel puțin 6 caractere.")
+    user = models.User(
+        email=data.email,
+        hashed_password=hash_password(data.password),
+        role=data.role,
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+@router.delete("/users/{user_id}", status_code=204, summary="Șterge utilizator")
+def delete_user(
+    user_id: str,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(require_admin),
+):
+    if str(current_user.id) == user_id:
+        raise HTTPException(status_code=400, detail="Nu îți poți șterge propriul cont.")
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilizatorul nu a fost găsit.")
+    db.delete(user)
+    db.commit()
 
 
 @router.get("/stats", summary="Statistici generale")

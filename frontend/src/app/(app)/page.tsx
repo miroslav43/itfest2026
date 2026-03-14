@@ -10,6 +10,7 @@ import CaneSidebar from "@/components/CaneSidebar";
 import LocationPanel from "@/components/LocationPanel";
 import OnboardingModal from "@/components/OnboardingModal";
 import RegisterBlindUserModal from "@/components/RegisterBlindUserModal";
+import ManageDestinationsModal from "@/components/ManageDestinationsModal";
 
 const CaneMap = dynamic(() => import("@/components/CaneMap"), {
   ssr: false,
@@ -30,6 +31,7 @@ export default function TrackingPage() {
   const [loadingCanes, setLoadingCanes] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showRegisterBlind, setShowRegisterBlind] = useState(false);
+  const [showDestinations, setShowDestinations] = useState(false);
   const wasOnlineRef = useRef(false);
   const role = getRole();
 
@@ -110,6 +112,12 @@ export default function TrackingPage() {
           onCreated={() => {}}
         />
       )}
+      {showDestinations && (
+        <ManageDestinationsModal
+          canes={canes}
+          onClose={() => setShowDestinations(false)}
+        />
+      )}
 
       <CaneSidebar
         canes={canes}
@@ -131,13 +139,22 @@ export default function TrackingPage() {
           </div>
           <div className="flex items-center gap-1">
             {(role === "caregiver" || role === "admin") && canes.length > 0 && (
-              <button
-                onClick={() => setShowRegisterBlind(true)}
-                className="px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
-                title="Înregistrează utilizator nevăzător"
-              >
-                👤+ Orb
-              </button>
+              <>
+                <button
+                  onClick={() => setShowRegisterBlind(true)}
+                  className="px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+                  title="Înregistrează utilizator nevăzător"
+                >
+                  👤+ Orb
+                </button>
+                <button
+                  onClick={() => setShowDestinations(true)}
+                  className="px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+                  title="Gestionează destinații nevăzători"
+                >
+                  📍 Destinații
+                </button>
+              </>
             )}
             {role === "admin" && (
               <Link

@@ -90,6 +90,23 @@ def update_location(
     return loc
 
 
+@router.delete(
+    "/{cane_id}/clear",
+    status_code=204,
+    summary="Șterge ultima locație (oprire simulator)",
+)
+def clear_location(
+    cane_id: str,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    _verify_access(cane_id, current_user, db)
+    db.query(models.LatestLocation).filter(
+        models.LatestLocation.cane_id == cane_id
+    ).delete()
+    db.commit()
+
+
 @router.get(
     "/{cane_id}/history",
     response_model=List[schemas.LocationHistoryOut],

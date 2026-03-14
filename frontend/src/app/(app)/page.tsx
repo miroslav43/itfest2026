@@ -9,8 +9,15 @@ import CaneSidebar from "@/components/CaneSidebar";
 import LocationPanel from "@/components/LocationPanel";
 import OnboardingModal from "@/components/OnboardingModal";
 
-// Load map client-only (no SSR) to avoid window/document errors
-const CaneMap = dynamic(() => import("@/components/CaneMap"), { ssr: false });
+// Leaflet uses browser APIs — must be loaded client-side only
+const CaneMap = dynamic(() => import("@/components/CaneMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-400">
+      <p>Se încarcă harta…</p>
+    </div>
+  ),
+});
 
 const POLL_INTERVAL_MS = 3000;
 

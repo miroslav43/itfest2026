@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef } from "react";
-import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
+import { GoogleMap, useJsApiLoader } from "@react-google-maps/api";
 import type { Location } from "@/types";
 
 const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "";
@@ -25,6 +25,7 @@ interface Props {
 
 export default function CaneMap({ location, caneName }: Props) {
   const mapRef = useRef<google.maps.Map | null>(null);
+  const markerRef = useRef<google.maps.Marker | null>(null);
 
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: API_KEY,
@@ -34,11 +35,57 @@ export default function CaneMap({ location, caneName }: Props) {
     mapRef.current = map;
   }, []);
 
+  // Update or create marker when location changes
+  const onMapIdle = useCallback(() => {
+    if (!mapRef.current || !location) return;
+
+    const pos = { lat: location.latitude, lng: location.longitude };
+
+    if (markerRef.current) {
+      markerRef.current.setPosition(pos);
+    } else {
+      markerRef.current = new window.google.maps.Marker({
+        map: mapRef.current,
+        position: pos,
+        title: caneName ?? "Baston",
+        icon: {
+          path: window.google.maps.SymbolPath.CIRCLE,
+          scale: 12,
+          fillColor: "#2563eb",
+          fillOpacity: 1,
+          strokeColor: "#ffffff",
+          strokeWeight: 3,
+        },
+      });
+    }
+  }, [location, caneName]);
+
+  // Remove marker when location is null
+  const handleLocationCleared = useCallback(() => {
+    if (!location && markerRef.current) {
+      markerRef.current.setMap(null);
+      markerRef.current = null;
+    }
+  }, [location]);
+
+  if (!API_KEY || API_KEY === "your_google_maps_api_key_here") {
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center bg-slate-100 text-slate-500 gap-2">
+        <p className="font-semibold">Cheie API Google Maps lipsă</p>
+        <p className="text-sm text-slate-400 text-center max-w-xs">
+          Adaugă <code className="bg-slate-200 px-1 rounded">NEXT_PUBLIC_GOOGLE_MAPS_API_KEY</code>{" "}
+          în <code className="bg-slate-200 px-1 rounded">frontend/.env.local</code>{" "}
+          și repornește serverul.
+        </p>
+      </div>
+    );
+  }
+
   if (loadError) {
     return (
-      <div className="w-full h-full flex flex-col items-center justify-center bg-slate-100 text-slate-400">
-        <p className="font-medium">Nu s-a putut încărca harta.</p>
-        <p className="text-sm mt-1">Verifică cheia API Google Maps.</p>
+      <div className="w-full h-full flex flex-col items-center justify-center bg-slate-100 text-slate-500 gap-1">
+        <p className="font-semibold">Nu s-a putut încărca harta.</p>
+        <p className="text-sm text-slate-400">Verifică cheia API și conexiunea la internet.</p>
       </div>
     );
   }
@@ -61,22 +108,11 @@ export default function CaneMap({ location, caneName }: Props) {
       center={center}
       zoom={location ? 16 : 12}
       options={MAP_OPTIONS}
-      onLoad={onLoad}
-    >
-      {location && (
-        <Marker
-          position={{ lat: location.latitude, lng: location.longitude }}
-          title={caneName ?? "Baston"}
-          icon={{
-            path: window.google.maps.SymbolPath.CIRCLE,
-            scale: 11,
-            fillColor: "#2563eb",
-            fillOpacity: 1,
-            strokeColor: "#ffffff",
-            strokeWeight: 3,
-          }}
-        />
-      )}
-    </GoogleMap>
+      onLoad={(map) => {
+        onLoad(map);
+        handleLocationCleared();
+      }}
+      onIdle={onMapIdle}
+    />
   );
 }

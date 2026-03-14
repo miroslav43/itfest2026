@@ -53,6 +53,29 @@ export default function SimulatorPage() {
     sendLocation(parseFloat(lat), parseFloat(lng), accuracy);
   }
 
+  function useMyLocation() {
+    if (!navigator.geolocation) {
+      setStatus("❌ Browserul tău nu suportă geolocation.");
+      return;
+    }
+    setStatus("📡 Se obține locația GPS...");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const la = pos.coords.latitude;
+        const lo = pos.coords.longitude;
+        const acc = pos.coords.accuracy?.toFixed(1) ?? "5";
+        setLat(la.toFixed(7));
+        setLng(lo.toFixed(7));
+        setAccuracy(acc);
+        sendLocation(la, lo, acc);
+      },
+      (err) => {
+        setStatus(`❌ Nu s-a putut obține locația: ${err.message}`);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }
+
   function startAuto() {
     if (intervalRef.current) return;
     posRef.current = { lat: parseFloat(lat) || 44.4268, lng: parseFloat(lng) || 26.1025 };
@@ -66,16 +89,47 @@ export default function SimulatorPage() {
     }, 3000);
   }
 
-  function stopAuto() {
+  async function stopAuto() {
     clearInterval(intervalRef.current!);
     intervalRef.current = null;
     setAutoRunning(false);
-    setStatus("Simulare oprită.");
+    setStatus("Simulare oprită. Se șterge locația de pe hartă…");
+
+    if (selectedId) {
+      try {
+        await api.delete(`/locations/${selectedId}/clear`);
+        setStatus("⏹ Simulare oprită — pinul a fost șters de pe hartă.");
+      } catch {
+        setStatus("⏹ Simulare oprită. (locația veche rămâne până la următorul update)");
+      }
+    }
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-10 px-4">
-      <div className="max-w-lg mx-auto">
+    <div className="min-h-screen bg-gray-50 pb-10">
+
+      {/* ── Sticky banner când simularea e activă ── */}
+      {autoRunning && (
+        <div className="sticky top-0 z-50 bg-red-500 text-white px-4 py-3 flex items-center justify-between shadow-md">
+          <div className="flex items-center gap-3">
+            <span className="relative flex h-3 w-3">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
+              <span className="relative inline-flex h-3 w-3 rounded-full bg-white" />
+            </span>
+            <span className="font-semibold text-sm">
+              Simulare activă — se trimite locație la fiecare 3s
+            </span>
+          </div>
+          <button
+            onClick={stopAuto}
+            className="bg-white text-red-600 font-bold px-4 py-1.5 rounded-lg text-sm hover:bg-red-50 transition-colors"
+          >
+            ⏹ Oprește
+          </button>
+        </div>
+      )}
+
+      <div className="max-w-lg mx-auto px-4 pt-8">
         <Link href="/" className="inline-block text-sm text-blue-600 hover:underline mb-4">
           ← Înapoi la hartă
         </Link>
@@ -140,6 +194,15 @@ export default function SimulatorPage() {
             />
           </label>
 
+          {/* Current location */}
+          <button
+            onClick={useMyLocation}
+            disabled={autoRunning}
+            className="w-full py-2.5 bg-green-600 hover:bg-green-700 disabled:opacity-40 text-white font-semibold rounded-lg text-sm transition-colors flex items-center justify-center gap-2"
+          >
+            📍 Folosește locația mea actuală
+          </button>
+
           {/* Actions */}
           <div className="flex gap-3 flex-wrap">
             <button
@@ -152,16 +215,16 @@ export default function SimulatorPage() {
             {autoRunning ? (
               <button
                 onClick={stopAuto}
-                className="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-lg text-sm transition-colors min-w-32"
+                className="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white font-bold rounded-lg text-sm transition-colors min-w-32 flex items-center justify-center gap-2"
               >
-                Oprește simulare
+                <span className="animate-pulse">⏹</span> Oprește simulare
               </button>
             ) : (
               <button
                 onClick={startAuto}
                 className="flex-1 py-2.5 bg-cyan-600 hover:bg-cyan-700 text-white font-semibold rounded-lg text-sm transition-colors min-w-32"
               >
-                Simulare auto (3s)
+                ▶ Simulare auto (3s)
               </button>
             )}
           </div>

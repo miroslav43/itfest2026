@@ -6,6 +6,7 @@ import type { Location } from "@/types";
 
 const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "";
 const DEFAULT_CENTER = { lat: 44.4268, lng: 26.1025 }; // București
+const LIBRARIES: ("places")[] = ["places"]; // must be stable reference
 
 const MAP_OPTIONS: google.maps.MapOptions = {
   disableDefaultUI: false,
@@ -29,6 +30,7 @@ export default function CaneMap({ location, caneName }: Props) {
 
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: API_KEY,
+    libraries: LIBRARIES,
   });
 
   const onLoad = useCallback((map: google.maps.Map) => {

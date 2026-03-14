@@ -3,49 +3,50 @@
 import { useState, useEffect } from "react";
 import { api, ApiError } from "@/lib/api";
 import type { Cane, Destination, User } from "@/types";
+import AddressAutocomplete from "./AddressAutocomplete";
 
 interface Props {
   canes: Cane[];
   onClose: () => void;
 }
 
-export default function ManageDestinationsModal({ canes, onClose }: Props) {
+export default function ManageDestinationsModal({ onClose }: Props) {
   const [blindUsers, setBlindUsers] = useState<User[]>([]);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [selectedUserCane, setSelectedUserCane] = useState<Cane | null>(null);
   const [destinations, setDestinations] = useState<Destination[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [loadingDests, setLoadingDests] = useState(false);
 
   // Add form
   const [name, setName] = useState("");
+  const [address, setAddress] = useState("");
   const [lat, setLat] = useState("");
   const [lng, setLng] = useState("");
-  const [caneId, setCaneId] = useState(canes[0]?.id ?? "");
   const [addError, setAddError] = useState("");
   const [addLoading, setAddLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
 
-  // Load blind users linked to this caregiver's canes
   useEffect(() => {
-    api.get<User[]>("/admin/users")
-      .then((all) => {
-        setBlindUsers(all.filter((u) => u.role === "blind_user"));
-        setLoadingUsers(false);
-      })
-      .catch(() => {
-        // Non-admin caregiver — fetch from blind-users endpoint
-        // For now, show empty and let them type the id via a different approach
-        setLoadingUsers(false);
-      });
+    api.get<User[]>("/blind-users/my-users")
+      .then((users) => { setBlindUsers(users); setLoadingUsers(false); })
+      .catch(() => setLoadingUsers(false));
   }, []);
 
-  async function loadDestinations(user: User) {
+  async function selectUser(user: User) {
     setSelectedUser(user);
     setDestinations([]);
+    setSelectedUserCane(null);
+    setShowForm(false);
+    setAddError("");
     setLoadingDests(true);
     try {
-      const data = await api.get<Destination[]>(`/destinations/for/${user.id}`);
-      setDestinations(data);
+      const [dests, cane] = await Promise.all([
+        api.get<Destination[]>(`/destinations/for/${user.id}`),
+        api.get<Cane | null>(`/blind-users/${user.id}/cane`),
+      ]);
+      setDestinations(dests);
+      setSelectedUserCane(cane);
     } catch {
       setDestinations([]);
     } finally {
@@ -55,13 +56,13 @@ export default function ManageDestinationsModal({ canes, onClose }: Props) {
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
-    if (!selectedUser) return;
+    if (!selectedUser || !selectedUserCane) return;
     setAddError("");
     setAddLoading(true);
     try {
       const dest = await api.post<Destination>("/destinations/", {
         blind_user_id: selectedUser.id,
-        cane_id: caneId,
+        cane_id: selectedUserCane.id,
         name,
         latitude: parseFloat(lat),
         longitude: parseFloat(lng),
@@ -85,11 +86,18 @@ export default function ManageDestinationsModal({ canes, onClose }: Props) {
     }
   }
 
+  function handleAddressSelect(selLat: number, selLng: number, formattedAddress: string) {
+    setLat(selLat.toFixed(7));
+    setLng(selLng.toFixed(7));
+    if (!name) setName(formattedAddress.split(",")[0]);
+  }
+
   function useMyLocation() {
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition((pos) => {
       setLat(pos.coords.latitude.toFixed(7));
       setLng(pos.coords.longitude.toFixed(7));
+      setAddress("Locația mea actuală");
     });
   }
 
@@ -118,7 +126,7 @@ export default function ManageDestinationsModal({ canes, onClose }: Props) {
               blindUsers.map((u) => (
                 <button
                   key={u.id}
-                  onClick={() => { loadDestinations(u); setShowForm(false); setAddError(""); }}
+                  onClick={() => selectUser(u)}
                   className={`w-full text-left px-3 py-2.5 text-sm transition-colors ${
                     selectedUser?.id === u.id
                       ? "bg-blue-50 text-blue-700 font-semibold"
@@ -142,9 +150,14 @@ export default function ManageDestinationsModal({ canes, onClose }: Props) {
               <>
                 {/* Actions bar */}
                 <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-                  <span className="text-sm font-semibold text-gray-700 truncate max-w-[180px]">{selectedUser.email}</span>
+                  <div>
+                    <span className="text-sm font-semibold text-gray-700 truncate block max-w-[180px]">{selectedUser.email}</span>
+                    {selectedUserCane && (
+                      <span className="text-xs text-gray-400">🦯 {selectedUserCane.name}</span>
+                    )}
+                  </div>
                   <button
-                    onClick={() => { setShowForm(!showForm); setAddError(""); }}
+                    onClick={() => { setShowForm(!showForm); setAddError(""); setAddress(""); setLat(""); setLng(""); setName(""); }}
                     className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg font-semibold transition-colors"
                   >
                     {showForm ? "Anulează" : "+ Adaugă"}
@@ -154,58 +167,46 @@ export default function ManageDestinationsModal({ canes, onClose }: Props) {
                 {/* Add form */}
                 {showForm && (
                   <form onSubmit={handleAdd} className="px-4 py-3 border-b border-gray-100 flex flex-col gap-2 bg-blue-50">
-                    {addError && (
-                      <p className="text-red-600 text-xs">{addError}</p>
-                    )}
+                    {addError && <p className="text-red-600 text-xs">{addError}</p>}
+
+                    {/* Name */}
                     <input
-                      className="px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-blue-500"
+                      className="px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-blue-500 bg-white"
                       placeholder="Nume destinație (ex: Acasă)"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       required
                       autoFocus
                     />
-                    <div className="grid grid-cols-2 gap-2">
-                      <input
-                        type="number"
-                        step="any"
-                        className="px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-blue-500"
-                        placeholder="Latitudine"
-                        value={lat}
-                        onChange={(e) => setLat(e.target.value)}
-                        required
-                      />
-                      <input
-                        type="number"
-                        step="any"
-                        className="px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-blue-500"
-                        placeholder="Longitudine"
-                        value={lng}
-                        onChange={(e) => setLng(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={useMyLocation}
-                      className="text-xs text-blue-600 hover:underline text-left"
-                    >
-                      📍 Folosește locația mea actuală
-                    </button>
-                    {canes.length > 1 && (
-                      <select
-                        className="px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm bg-white outline-none focus:border-blue-500"
-                        value={caneId}
-                        onChange={(e) => setCaneId(e.target.value)}
-                      >
-                        {canes.map((c) => (
-                          <option key={c.id} value={c.id}>{c.name}</option>
-                        ))}
-                      </select>
+
+                    {/* Address search with Places Autocomplete */}
+                    <AddressAutocomplete
+                      value={address}
+                      onChange={setAddress}
+                      onSelect={handleAddressSelect}
+                      placeholder="Caută adresă (ex: Piața Unirii, București)"
+                      className="px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-blue-500 bg-white w-full"
+                    />
+
+                    {/* Coordinates — shown after geocoding */}
+                    {(lat && lng) ? (
+                      <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-green-50 border border-green-200 rounded-lg text-xs text-green-700">
+                        📍 {parseFloat(lat).toFixed(5)}, {parseFloat(lng).toFixed(5)}
+                        <button type="button" onClick={() => { setLat(""); setLng(""); setAddress(""); }} className="ml-auto text-gray-400 hover:text-gray-600">✕</button>
+                      </div>
+                    ) : (
+                      <button type="button" onClick={useMyLocation} className="text-xs text-blue-600 hover:underline text-left">
+                        📍 Folosește locația mea actuală
+                      </button>
                     )}
+
+                    {/* Hidden required fields for validation */}
+                    <input type="hidden" value={lat} required />
+                    <input type="hidden" value={lng} required />
+
                     <button
                       type="submit"
-                      disabled={addLoading}
+                      disabled={addLoading || !selectedUserCane || !lat || !lng}
                       className="py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold rounded-lg text-sm transition-colors"
                     >
                       {addLoading ? "Se salvează…" : "Salvează destinație"}
@@ -218,9 +219,7 @@ export default function ManageDestinationsModal({ canes, onClose }: Props) {
                   {loadingDests ? (
                     <p className="text-sm text-gray-400 text-center py-6">Se încarcă…</p>
                   ) : destinations.length === 0 ? (
-                    <p className="text-sm text-gray-400 text-center py-8">
-                      Nicio destinație adăugată.
-                    </p>
+                    <p className="text-sm text-gray-400 text-center py-8">Nicio destinație adăugată.</p>
                   ) : (
                     <ul className="divide-y divide-gray-50">
                       {destinations.map((dest) => (
@@ -229,9 +228,7 @@ export default function ManageDestinationsModal({ canes, onClose }: Props) {
                             <div className="flex items-center gap-2">
                               <p className="text-sm font-semibold text-gray-800 truncate">{dest.name}</p>
                               {dest.active && (
-                                <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full font-semibold">
-                                  activă
-                                </span>
+                                <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full font-semibold">activă</span>
                               )}
                             </div>
                             <p className="text-xs text-gray-400 mt-0.5">

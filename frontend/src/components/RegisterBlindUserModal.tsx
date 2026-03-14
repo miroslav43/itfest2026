@@ -4,16 +4,20 @@ import { useState } from "react";
 import { api, ApiError } from "@/lib/api";
 import type { Cane, User } from "@/types";
 
-interface Props {
-  canes: Cane[];
-  onClose: () => void;
-  onCreated: (user: User) => void;
+interface BlindUserCreatedOut {
+  user: User;
+  cane: Cane;
 }
 
-export default function RegisterBlindUserModal({ canes, onClose, onCreated }: Props) {
+interface Props {
+  onClose: () => void;
+  onCreated: (user: User, cane: Cane) => void;
+}
+
+export default function RegisterBlindUserModal({ onClose, onCreated }: Props) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [caneId, setCaneId] = useState(canes[0]?.id ?? "");
+  const [caneName, setCaneName] = useState("Baston");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
@@ -22,19 +26,18 @@ export default function RegisterBlindUserModal({ canes, onClose, onCreated }: Pr
     e.preventDefault();
     setError("");
     setSuccess("");
-    if (!caneId) return setError("Selectează un baston.");
     if (password.length < 6) return setError("Parola trebuie să aibă cel puțin 6 caractere.");
 
     setLoading(true);
     try {
-      const user = await api.post<User>("/blind-users/", {
+      const result = await api.post<BlindUserCreatedOut>("/blind-users/", {
         email,
         password,
-        cane_id: caneId,
+        cane_name: caneName,
       });
-      setSuccess(`Cont creat pentru ${user.email}`);
-      onCreated(user);
-      setTimeout(onClose, 1500);
+      setSuccess(`Cont creat pentru ${result.user.email}. Bastonul „${result.cane.name}" a fost asociat automat.`);
+      onCreated(result.user, result.cane);
+      setTimeout(onClose, 2000);
     } catch (err) {
       setError(err instanceof ApiError ? err.detail : "A apărut o eroare.");
     } finally {
@@ -54,8 +57,7 @@ export default function RegisterBlindUserModal({ canes, onClose, onCreated }: Pr
         </div>
 
         <p className="text-sm text-gray-500 mb-4 leading-relaxed">
-          Creează un cont pentru persoana nevăzătoare și leagă-l de bastonul său.
-          Ei se vor putea autentifica cu aceste date.
+          Un baston nou va fi creat automat și asociat acestui utilizator.
         </p>
 
         {error && (
@@ -92,25 +94,27 @@ export default function RegisterBlindUserModal({ canes, onClose, onCreated }: Pr
           </label>
 
           <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
-            Baston asociat
-            <select
-              className="px-3 py-2 border border-gray-200 rounded-lg outline-none focus:border-blue-500 text-sm bg-white"
-              value={caneId}
-              onChange={(e) => setCaneId(e.target.value)}
-            >
-              {canes.length === 0 && <option value="">Niciun baston disponibil</option>}
-              {canes.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
+            Nume baston
+            <input
+              type="text"
+              className="px-3 py-2 border border-gray-200 rounded-lg outline-none focus:border-blue-500 text-sm"
+              value={caneName}
+              onChange={(e) => setCaneName(e.target.value)}
+              placeholder="ex: Baston Ion"
+              required
+            />
           </label>
+
+          <div className="flex items-center gap-2 py-2 px-3 bg-blue-50 rounded-lg text-xs text-blue-700">
+            🦯 Bastonul „{caneName || "Baston"}" va fi creat și adăugat automat în lista ta.
+          </div>
 
           <button
             type="submit"
-            disabled={loading || canes.length === 0}
+            disabled={loading}
             className="py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold rounded-lg text-sm transition-colors mt-1"
           >
-            {loading ? "Se creează contul..." : "Creează cont"}
+            {loading ? "Se creează contul..." : "Creează cont + baston"}
           </button>
         </form>
       </div>

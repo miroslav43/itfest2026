@@ -14,6 +14,10 @@ def list_canes(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
+    # Admin sees all canes in the system
+    if current_user.role == "admin":
+        return db.query(models.Cane).order_by(models.Cane.created_at).all()
+
     accesses = (
         db.query(models.CaneAccess)
         .filter(models.CaneAccess.caregiver_id == current_user.id)
@@ -54,12 +58,21 @@ def enroll_cane(
     return cane
 
 
-@router.delete("/{cane_id}", status_code=204, summary="Dezasociază baston")
+@router.delete("/{cane_id}", status_code=204, summary="Dezasociază / șterge baston")
 def unlink_cane(
     cane_id: str,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
+    # Admin deletes the cane entirely from the system
+    if current_user.role == "admin":
+        cane = db.query(models.Cane).filter(models.Cane.id == cane_id).first()
+        if not cane:
+            raise HTTPException(status_code=404, detail="Bastonul nu a fost găsit.")
+        db.delete(cane)
+        db.commit()
+        return
+
     access = (
         db.query(models.CaneAccess)
         .filter(

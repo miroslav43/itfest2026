@@ -177,3 +177,29 @@ def activate_destination(
     db.commit()
     db.refresh(dest)
     return dest
+
+
+@router.put(
+    "/{dest_id}/deactivate",
+    response_model=schemas.DestinationOut,
+    summary="[Nevăzător] Dezactivează destinație",
+)
+def deactivate_destination(
+    dest_id: str,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(require_blind_user),
+):
+    dest = (
+        db.query(models.Destination)
+        .filter(
+            models.Destination.id == dest_id,
+            models.Destination.blind_user_id == current_user.id,
+        )
+        .first()
+    )
+    if not dest:
+        raise HTTPException(status_code=404, detail="Destinația nu a fost găsită.")
+    dest.active = False
+    db.commit()
+    db.refresh(dest)
+    return dest

@@ -8,16 +8,25 @@ from auth import hash_password, verify_password, create_access_token
 router = APIRouter()
 
 
-@router.post("/signup", response_model=schemas.Token, summary="Înregistrare cont nou")
+@router.get("/user-count", summary="Verifică dacă există utilizatori înregistrați")
+def user_count(db: Session = Depends(get_db)):
+    return {"count": db.query(models.User).count()}
+
+
+@router.post("/signup", response_model=schemas.Token, summary="Înregistrare cont nou (doar primul utilizator)")
 def signup(data: schemas.UserCreate, db: Session = Depends(get_db)):
+    user_count = db.query(models.User).count()
+    if user_count > 0:
+        raise HTTPException(
+            status_code=403,
+            detail="Înregistrarea directă nu este permisă. Contactați administratorul pentru a primi un cont.",
+        )
     if db.query(models.User).filter(models.User.email == data.email).first():
         raise HTTPException(status_code=400, detail="Email-ul este deja folosit.")
     if len(data.password) < 6:
         raise HTTPException(status_code=400, detail="Parola trebuie să aibă cel puțin 6 caractere.")
 
-    # First ever user becomes admin
-    user_count = db.query(models.User).count()
-    role = "admin" if user_count == 0 else "caregiver"
+    role = "admin"
 
     user = models.User(
         email=data.email,

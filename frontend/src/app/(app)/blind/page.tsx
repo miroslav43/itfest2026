@@ -85,6 +85,16 @@ export default function BlindPage() {
     } catch { /* ignore */ }
   }
 
+  async function handleDeactivate(id: string) {
+    try {
+      const updated = await api.put<Destination>(`/destinations/${id}/deactivate`, {});
+      setDestinations((prev) =>
+        prev.map((d) => (d.id === updated.id ? { ...d, active: false } : d))
+      );
+      speak("Destinație dezactivată.");
+    } catch { /* ignore */ }
+  }
+
   function handleLogout() {
     clearToken();
     router.push("/auth");
@@ -140,13 +150,22 @@ export default function BlindPage() {
             <p className="text-blue-300 text-lg mt-1">
               {activeDest.latitude.toFixed(5)}, {activeDest.longitude.toFixed(5)}
             </p>
-            <button
-              onClick={() => speak(`Destinație activă: ${activeDest.name}`)}
-              className="mt-4 w-full py-3 bg-blue-700 hover:bg-blue-600 rounded-2xl text-lg font-bold transition-colors"
-              aria-label="Citește destinația"
-            >
-              🔊 Citește destinația
-            </button>
+            <div className="mt-4 flex gap-3">
+              <button
+                onClick={() => speak(`Destinație activă: ${activeDest.name}`)}
+                className="flex-1 py-3 bg-blue-700 hover:bg-blue-600 rounded-2xl text-lg font-bold transition-colors"
+                aria-label="Citește destinația"
+              >
+                🔊 Citește
+              </button>
+              <button
+                onClick={() => handleDeactivate(activeDest.id)}
+                className="flex-1 py-3 bg-red-800 hover:bg-red-700 rounded-2xl text-lg font-bold transition-colors"
+                aria-label="Oprește destinația activă"
+              >
+                ✕ Oprește
+              </button>
+            </div>
           </section>
         )}
 
@@ -179,7 +198,15 @@ export default function BlindPage() {
                     </span>
                   )}
                 </div>
-                {!dest.active && (
+                {dest.active ? (
+                  <button
+                    onClick={() => handleDeactivate(dest.id)}
+                    className="bg-gray-700 hover:bg-red-800 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors shrink-0"
+                    aria-label={`Dezactivează ${dest.name}`}
+                  >
+                    ✕ Oprește
+                  </button>
+                ) : (
                   <button
                     onClick={() => handleActivate(dest.id, dest.name)}
                     className="bg-blue-700 hover:bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors shrink-0"

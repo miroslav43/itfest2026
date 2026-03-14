@@ -100,6 +100,17 @@ export default function TrackingPage() {
     setActiveCaneId(cane.id);
   }
 
+  function handleCaneRemoved(id: string) {
+    setCanes((prev) => {
+      const next = prev.filter((c) => c.id !== id);
+      if (activeCaneId === id) {
+        setActiveCaneId(next.length > 0 ? next[0].id : null);
+        setLocation(null);
+      }
+      return next;
+    });
+  }
+
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
       {showOnboarding && (
@@ -107,9 +118,15 @@ export default function TrackingPage() {
       )}
       {showRegisterBlind && (
         <RegisterBlindUserModal
-          canes={canes}
           onClose={() => setShowRegisterBlind(false)}
-          onCreated={() => {}}
+          onCreated={(_user, cane) => {
+            if (cane) handleCaneAdded(cane);
+            // Refresh full cane list to ensure sidebar is up to date
+            api.get<Cane[]>("/canes/").then((data) => {
+              setCanes(data);
+              if (!activeCaneId && data.length > 0) setActiveCaneId(data[0].id);
+            }).catch(() => {});
+          }}
         />
       )}
       {showDestinations && (
@@ -124,6 +141,7 @@ export default function TrackingPage() {
         activeCaneId={activeCaneId}
         onSelectCane={(id) => { setActiveCaneId(id); setLocation(null); }}
         onCaneAdded={handleCaneAdded}
+        onCaneRemoved={handleCaneRemoved}
       />
 
       <main className="flex-1 flex flex-col overflow-hidden">
@@ -138,23 +156,23 @@ export default function TrackingPage() {
             )}
           </div>
           <div className="flex items-center gap-1">
+            {role === "caregiver" && (
+              <button
+                onClick={() => setShowRegisterBlind(true)}
+                className="px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+                title="Înregistrează utilizator nevăzător"
+              >
+                👤+ Orb
+              </button>
+            )}
             {(role === "caregiver" || role === "admin") && canes.length > 0 && (
-              <>
-                <button
-                  onClick={() => setShowRegisterBlind(true)}
-                  className="px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
-                  title="Înregistrează utilizator nevăzător"
-                >
-                  👤+ Orb
-                </button>
-                <button
-                  onClick={() => setShowDestinations(true)}
-                  className="px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
-                  title="Gestionează destinații nevăzători"
-                >
-                  📍 Destinații
-                </button>
-              </>
+              <button
+                onClick={() => setShowDestinations(true)}
+                className="px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+                title="Gestionează destinații nevăzători"
+              >
+                📍 Destinații
+              </button>
             )}
             {role === "admin" && (
               <Link

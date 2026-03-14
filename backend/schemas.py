@@ -62,11 +62,17 @@ class CaneOut(BaseModel):
 
 # ─── Blind users ──────────────────────────────────────────────────────────────
 
+class BlindUserCreatedOut(BaseModel):
+    user: "UserOut"
+    cane: "CaneOut"
+
+    model_config = {"from_attributes": True}
+
 class BlindUserCreate(BaseModel):
     email: EmailStr
     password: str
-    cane_id: str
-    display_name: Optional[str] = None
+    cane_name: str = "Baston"
+    caregiver_id: Optional[str] = None   # admin-only: assign to a specific caregiver
 
 
 class BlindUserCaneOut(BaseModel):

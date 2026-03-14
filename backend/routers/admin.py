@@ -49,6 +49,19 @@ def list_all_canes(
     return db.query(models.Cane).order_by(models.Cane.created_at).all()
 
 
+@router.delete("/canes/{cane_id}", status_code=204, summary="Șterge baston complet (admin)")
+def delete_cane(
+    cane_id: str,
+    db: Session = Depends(get_db),
+    _: models.User = Depends(require_admin),
+):
+    cane = db.query(models.Cane).filter(models.Cane.id == cane_id).first()
+    if not cane:
+        raise HTTPException(status_code=404, detail="Bastonul nu a fost găsit.")
+    db.delete(cane)
+    db.commit()
+
+
 @router.post("/users", response_model=schemas.UserOut, summary="Creează cont nou (admin)")
 def create_user(
     data: schemas.AdminUserCreate,

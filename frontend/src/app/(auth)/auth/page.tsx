@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
 import { setToken, isAuthenticated } from "@/lib/auth";
+import type { Role } from "@/types";
 
 type Mode = "login" | "signup";
 
@@ -30,12 +31,15 @@ export default function AuthPage() {
 
     setLoading(true);
     try {
-      const data = await api.post<{ access_token: string }>(
+      const data = await api.post<{ access_token: string; role: Role }>(
         `/auth/${mode === "login" ? "login" : "signup"}`,
         { email, password }
       );
-      setToken(data.access_token);
-      router.push("/");
+      setToken(data.access_token, data.role);
+      // Redirect based on role
+      if (data.role === "blind_user") router.push("/blind");
+      else if (data.role === "admin") router.push("/admin");
+      else router.push("/");
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.detail);

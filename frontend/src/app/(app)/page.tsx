@@ -1,15 +1,16 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { api } from "@/lib/api";
+import { getRole } from "@/lib/auth";
 import type { Cane, Location } from "@/types";
 import CaneSidebar from "@/components/CaneSidebar";
 import LocationPanel from "@/components/LocationPanel";
 import OnboardingModal from "@/components/OnboardingModal";
+import RegisterBlindUserModal from "@/components/RegisterBlindUserModal";
 
-// Leaflet uses browser APIs — must be loaded client-side only
 const CaneMap = dynamic(() => import("@/components/CaneMap"), {
   ssr: false,
   loading: () => (
@@ -20,6 +21,7 @@ const CaneMap = dynamic(() => import("@/components/CaneMap"), {
 });
 
 const POLL_INTERVAL_MS = 3000;
+const STALE_MS = 5 * 60 * 1000;
 
 export default function TrackingPage() {
   const [canes, setCanes] = useState<Cane[]>([]);
@@ -27,17 +29,27 @@ export default function TrackingPage() {
   const [location, setLocation] = useState<Location | null>(null);
   const [loadingCanes, setLoadingCanes] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showRegisterBlind, setShowRegisterBlind] = useState(false);
+  const wasOnlineRef = useRef(false);
+  const role = getRole();
 
   const activeCane = canes.find((c) => c.id === activeCaneId) ?? null;
 
-  // Check onboarding
+  // Request notification permission once
+  useEffect(() => {
+    if (typeof Notification !== "undefined" && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }, []);
+
+  // Onboarding
   useEffect(() => {
     if (!localStorage.getItem("solemtrix_onboarding_done")) {
       setShowOnboarding(true);
     }
   }, []);
 
-  // Load canes list
+  // Load canes
   useEffect(() => {
     api.get<Cane[]>("/canes/").then((data) => {
       setCanes(data);
@@ -61,6 +73,23 @@ export default function TrackingPage() {
     return () => clearInterval(interval);
   }, [fetchLocation]);
 
+  // Browser notification when GPS goes offline
+  useEffect(() => {
+    const isOnline =
+      location != null &&
+      Date.now() - new Date(location.recorded_at).getTime() < STALE_MS;
+
+    if (wasOnlineRef.current && !isOnline && activeCane) {
+      if (typeof Notification !== "undefined" && Notification.permission === "granted") {
+        new Notification("Solemtrix — semnal pierdut", {
+          body: `Bastonul "${activeCane.name}" nu mai trimite locație.`,
+          icon: "/favicon.svg",
+        });
+      }
+    }
+    wasOnlineRef.current = isOnline;
+  }, [location, activeCane]);
+
   function handleCaneAdded(cane: Cane) {
     setCanes((prev) => {
       if (prev.find((c) => c.id === cane.id)) return prev;
@@ -74,41 +103,59 @@ export default function TrackingPage() {
       {showOnboarding && (
         <OnboardingModal onClose={() => setShowOnboarding(false)} />
       )}
+      {showRegisterBlind && (
+        <RegisterBlindUserModal
+          canes={canes}
+          onClose={() => setShowRegisterBlind(false)}
+          onCreated={() => {}}
+        />
+      )}
 
       <CaneSidebar
         canes={canes}
         activeCaneId={activeCaneId}
-        onSelectCane={(id) => {
-          setActiveCaneId(id);
-          setLocation(null);
-        }}
+        onSelectCane={(id) => { setActiveCaneId(id); setLocation(null); }}
         onCaneAdded={handleCaneAdded}
       />
 
       <main className="flex-1 flex flex-col overflow-hidden">
-        {/* Top bar */}
         <header className="h-13 flex-shrink-0 bg-white border-b border-gray-100 flex items-center justify-between px-5">
           <div className="flex items-center gap-2">
             <span className="text-xl">🦯</span>
             <span className="font-bold text-blue-800 tracking-tight">Solemtrix</span>
+            {role === "admin" && (
+              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-semibold ml-1">
+                Admin
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-1">
-            <Link
-              href="/simulator"
-              className="px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
-            >
+            {(role === "caregiver" || role === "admin") && canes.length > 0 && (
+              <button
+                onClick={() => setShowRegisterBlind(true)}
+                className="px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+                title="Înregistrează utilizator nevăzător"
+              >
+                👤+ Orb
+              </button>
+            )}
+            {role === "admin" && (
+              <Link
+                href="/admin"
+                className="px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                🛡 Admin
+              </Link>
+            )}
+            <Link href="/simulator" className="px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors">
               🛠 Simulator
             </Link>
-            <Link
-              href="/settings"
-              className="px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
-            >
+            <Link href="/settings" className="px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors">
               ⚙ Setări
             </Link>
           </div>
         </header>
 
-        {/* Map area */}
         <div className="flex-1 relative overflow-hidden">
           {loadingCanes ? (
             <div className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-400">
@@ -118,9 +165,7 @@ export default function TrackingPage() {
             <div className="w-full h-full flex items-center justify-center bg-slate-50">
               <div className="text-center max-w-sm px-6">
                 <span className="text-6xl block mb-4">🦯</span>
-                <h2 className="text-xl font-bold text-blue-800 mb-2">
-                  Niciun baston asociat
-                </h2>
+                <h2 className="text-xl font-bold text-blue-800 mb-2">Niciun baston asociat</h2>
                 <p className="text-gray-500 text-sm leading-relaxed">
                   Apasă butonul <strong>+</strong> din bara laterală pentru a
                   asocia primul tău baston prin codul QR.
@@ -130,9 +175,7 @@ export default function TrackingPage() {
           ) : (
             <>
               <CaneMap location={location} caneName={activeCane?.name} />
-              {activeCane && (
-                <LocationPanel cane={activeCane} location={location} />
-              )}
+              {activeCane && <LocationPanel cane={activeCane} location={location} />}
             </>
           )}
         </div>

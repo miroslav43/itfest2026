@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-from routers import auth, users, canes, locations
+from routers import auth, users, canes, locations, admin, blind_users, destinations
 
 load_dotenv()
 
@@ -14,10 +14,9 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Import here so any error is visible in logs before crashing
     try:
         from database import engine, Base
-        import models  # noqa: F401 – registers all ORM models
+        import models  # noqa: F401
         Base.metadata.create_all(bind=engine)
         logger.info("✅ Conexiune Neon OK – tabele verificate.")
     except Exception as e:
@@ -28,7 +27,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Solemtrix API",
-    version="0.1.0",
+    version="0.2.0",
     description="Backend pentru aplicația de monitorizare baston inteligent.",
     lifespan=lifespan,
 )
@@ -47,8 +46,11 @@ app.include_router(auth.router, prefix="/auth", tags=["Autentificare"])
 app.include_router(users.router, prefix="/users", tags=["Utilizatori"])
 app.include_router(canes.router, prefix="/canes", tags=["Bastoane"])
 app.include_router(locations.router, prefix="/locations", tags=["Locații"])
+app.include_router(admin.router, prefix="/admin", tags=["Admin"])
+app.include_router(blind_users.router, prefix="/blind-users", tags=["Utilizatori Nevăzători"])
+app.include_router(destinations.router, prefix="/destinations", tags=["Destinații"])
 
 
 @app.get("/", tags=["Health"])
 def root():
-    return {"status": "ok", "app": "Solemtrix API", "version": "0.1.0"}
+    return {"status": "ok", "app": "Solemtrix API", "version": "0.2.0"}

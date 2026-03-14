@@ -1,6 +1,9 @@
+export type Role = "admin" | "caregiver" | "blind_user";
+
 export interface User {
   id: string;
   email: string;
+  role: Role;
   created_at: string;
 }
 
@@ -27,6 +30,17 @@ export interface LocationHistoryPoint {
   accuracy: number | null;
   recorded_at: string;
   source: string;
+}
+
+export interface Destination {
+  id: string;
+  blind_user_id: string;
+  cane_id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  active: boolean;
+  created_at: string;
 }
 
 export interface ApiError {

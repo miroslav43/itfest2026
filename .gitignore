@@ -8,6 +8,20 @@ backend/.env
 backend/.env.*
 !backend/.env.example
 
+# ─── Image Detection (Camera System) ──────────────────────────────────────────
+imageDetection/.env
+imageDetection/.env.*
+!imageDetection/.env.example
+imageDetection/__pycache__/
+imageDetection/**/__pycache__/
+imageDetection/*.pyc
+imageDetection/*.pyo
+imageDetection/venv/
+imageDetection/.venv/
+# imageDetection/known_faces/
+imageDetection/models/
+imageDetection/*.onnx
+
 # ─── Node / Frontend ─────────────────────────────────────────────────────────
 frontend/node_modules/
 frontend/.next/

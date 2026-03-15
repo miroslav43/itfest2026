@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { api, ApiError } from "@/lib/api";
+import { Button, Input, Modal, Spinner } from "@/components/ui";
 import type { Cane, User } from "@/types";
 
 interface BlindUserCreatedOut {
@@ -35,7 +36,7 @@ export default function RegisterBlindUserModal({ onClose, onCreated }: Props) {
         password,
         cane_name: caneName,
       });
-      setSuccess(`Cont creat pentru ${result.user.email}. Bastonul „${result.cane.name}" a fost asociat automat.`);
+      setSuccess(`Cont creat pentru ${result.user.email}. Bastonul "${result.cane.name}" a fost asociat automat.`);
       onCreated(result.user, result.cane);
       setTimeout(onClose, 2000);
     } catch (err) {
@@ -46,78 +47,58 @@ export default function RegisterBlindUserModal({ onClose, onCreated }: Props) {
   }
 
   return (
-    <div
-      className="fixed inset-0 z-40 flex items-center justify-center bg-black/45 px-4"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-blue-800">Înregistrează utilizator nevăzător</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-lg">✕</button>
+    <Modal title="Înregistrează utilizator nevăzător" description="Un baston nou va fi creat automat și asociat." onClose={onClose}>
+      {error && (
+        <div className="mb-4 px-4 py-3 bg-danger-500/10 border border-danger-500/20 text-danger-400 rounded-xl text-sm font-medium animate-fade-in">
+          {error}
+        </div>
+      )}
+      {success && (
+        <div className="mb-4 px-4 py-3 bg-success-500/10 border border-success-500/20 text-success-400 rounded-xl text-sm font-medium animate-fade-in">
+          {success}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <Input
+          type="email"
+          label="Email utilizator nevăzător"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="orb@email.com"
+          required
+          autoFocus
+        />
+
+        <Input
+          type="password"
+          label="Parolă temporară"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="min. 6 caractere"
+          required
+        />
+
+        <Input
+          type="text"
+          label="Nume baston"
+          value={caneName}
+          onChange={(e) => setCaneName(e.target.value)}
+          placeholder="ex: Baston Ion"
+          required
+        />
+
+        <div className="flex items-center gap-2.5 py-3 px-4 bg-accent-500/8 border border-accent-500/15 rounded-xl text-xs text-accent-300">
+          <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <path d="M12 2v20M8 6l4-4 4 4" />
+          </svg>
+          Bastonul &quot;{caneName || "Baston"}&quot; va fi creat și adăugat automat în lista ta.
         </div>
 
-        <p className="text-sm text-gray-500 mb-4 leading-relaxed">
-          Un baston nou va fi creat automat și asociat acestui utilizator.
-        </p>
-
-        {error && (
-          <div className="mb-3 px-3 py-2 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">{error}</div>
-        )}
-        {success && (
-          <div className="mb-3 px-3 py-2 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm">{success}</div>
-        )}
-
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-          <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
-            Email utilizator nevăzător
-            <input
-              type="email"
-              className="px-3 py-2 border border-gray-200 rounded-lg outline-none focus:border-blue-500 text-sm"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="orb@email.com"
-              required
-              autoFocus
-            />
-          </label>
-
-          <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
-            Parolă temporară
-            <input
-              type="password"
-              className="px-3 py-2 border border-gray-200 rounded-lg outline-none focus:border-blue-500 text-sm"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="min. 6 caractere"
-              required
-            />
-          </label>
-
-          <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
-            Nume baston
-            <input
-              type="text"
-              className="px-3 py-2 border border-gray-200 rounded-lg outline-none focus:border-blue-500 text-sm"
-              value={caneName}
-              onChange={(e) => setCaneName(e.target.value)}
-              placeholder="ex: Baston Ion"
-              required
-            />
-          </label>
-
-          <div className="flex items-center gap-2 py-2 px-3 bg-blue-50 rounded-lg text-xs text-blue-700">
-            🦯 Bastonul „{caneName || "Baston"}" va fi creat și adăugat automat în lista ta.
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold rounded-lg text-sm transition-colors mt-1"
-          >
-            {loading ? "Se creează contul..." : "Creează cont + baston"}
-          </button>
-        </form>
-      </div>
-    </div>
+        <Button type="submit" disabled={loading} size="lg" className="w-full">
+          {loading ? <><Spinner size="sm" /> Se creează contul...</> : "Creează cont + baston"}
+        </Button>
+      </form>
+    </Modal>
   );
 }

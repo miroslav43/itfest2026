@@ -59,7 +59,6 @@ function formatTime(iso: string) {
   });
 }
 
-// ── Types ─────────────────────────────────────────────────────────────────────
 interface PendingAction {
   id: string;
   label: string;
@@ -73,7 +72,6 @@ export default function BlindPage() {
   const [destinations, setDestinations] = useState<Destination[]>([]);
   const wasOnlineRef = useRef(false);
 
-  // "Announce first, act second" state
   const [pending, setPending] = useState<PendingAction | null>(null);
   const pendingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -83,16 +81,12 @@ export default function BlindPage() {
 
   const activeDest = destinations.find((d) => d.active) ?? null;
 
-  // ── Accessible click handler ─────────────────────────────────────────────
   function tap(id: string, announceText: string, action: () => void) {
     if (pendingTimerRef.current) clearTimeout(pendingTimerRef.current);
-
     if (pending?.id === id) {
-      // Second tap — execute
       setPending(null);
       action();
     } else {
-      // First tap — announce and arm
       speakNow(`${announceText}. Apasă din nou pentru a confirma.`);
       setPending({ id, label: announceText, action });
       pendingTimerRef.current = setTimeout(() => {
@@ -102,13 +96,11 @@ export default function BlindPage() {
     }
   }
 
-  // ── Data loading ─────────────────────────────────────────────────────────
   useEffect(() => {
     api.get<Cane | null>("/blind-users/me/cane").then((c) => {
       setCane(c);
       if (c) speak(`Baston conectat: ${c.name}`);
     }).catch(() => {});
-
     api.get<Destination[]>("/destinations/mine").then(setDestinations).catch(() => {});
   }, []);
 
@@ -135,7 +127,6 @@ export default function BlindPage() {
     wasOnlineRef.current = isOnline;
   }, [isOnline, cane]);
 
-  // ── Actions ───────────────────────────────────────────────────────────────
   async function doActivate(id: string, name: string) {
     try {
       const updated = await api.put<Destination>(`/destinations/${id}/activate`, {});
@@ -152,10 +143,7 @@ export default function BlindPage() {
     } catch { /* ignore */ }
   }
 
-  function doLogout() {
-    clearToken();
-    router.push("/auth");
-  }
+  function doLogout() { clearToken(); router.push("/auth"); }
 
   function doReadStatus() {
     const msg = cane
@@ -166,163 +154,173 @@ export default function BlindPage() {
     speakNow(msg);
   }
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
-  function btnClass(id: string, base: string) {
-    return `${base} ${
-      pending?.id === id
-        ? "ring-4 ring-yellow-400 ring-offset-2 ring-offset-gray-900 scale-95"
-        : ""
-    } transition-all`;
-  }
+  function isPending(id: string) { return pending?.id === id; }
 
-  // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-gray-900 text-white flex flex-col">
+    <div className="min-h-screen bg-surface-0 text-white flex flex-col">
       {/* Header */}
-      <header className="bg-gray-800 px-6 py-5 flex items-center justify-between border-b border-gray-700">
+      <header className="bg-surface-50 px-6 py-5 flex items-center justify-between border-b border-white/[0.06]" role="banner">
         <div className="flex items-center gap-3">
-          <span className="text-3xl">🦯</span>
-          <span className="text-2xl font-bold tracking-tight">Solemtrix</span>
+          <div className="w-10 h-10 rounded-2xl bg-accent-500/15 border border-accent-500/20 flex items-center justify-center">
+            <svg className="w-5 h-5 text-accent-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <path d="M12 2v20M8 6l4-4 4 4" />
+            </svg>
+          </div>
+          <span className="text-2xl font-bold tracking-tight text-slate-100">Solemtrix</span>
         </div>
         <button
-          onClick={() =>
-            tap("logout", "Ieșire din aplicație", doLogout)
-          }
-          className={btnClass("logout", "text-gray-400 hover:text-white text-sm font-medium px-4 py-2 rounded-xl hover:bg-gray-700")}
+          onClick={() => tap("logout", "Ieșire din aplicație", doLogout)}
+          className={`text-sm font-semibold px-5 py-3 rounded-2xl transition-all duration-200
+            ${isPending("logout")
+              ? "bg-warning-500 text-surface-0 ring-4 ring-warning-400/40 scale-95"
+              : "text-slate-400 hover:text-white hover:bg-white/[0.06]"
+            }`}
           aria-label="Deconectare"
         >
           Ieșire
         </button>
       </header>
 
-      {/* Pending toast */}
+      {/* Pending confirmation toast */}
       {pending && (
         <div
-          className="mx-6 mt-4 px-5 py-3 bg-yellow-500 text-gray-900 rounded-2xl text-center font-bold text-lg"
+          className="mx-4 mt-4 px-6 py-4 bg-warning-500 text-surface-0 rounded-2xl text-center font-bold text-lg animate-fade-in shadow-lg"
+          role="alert"
           aria-live="assertive"
         >
-          ⚠️ Apasă din nou pentru a confirma: <span className="italic">{pending.label}</span>
+          Apasă din nou: {pending.label}
         </div>
       )}
 
-      <main className="flex-1 flex flex-col gap-6 p-6 max-w-2xl mx-auto w-full">
+      <main className="flex-1 flex flex-col gap-5 p-5 max-w-2xl mx-auto w-full" role="main">
 
         {/* Status card */}
         <section
-          className={`rounded-3xl p-8 text-center transition-colors ${
-            isOnline ? "bg-green-800" : "bg-red-900"
+          className={`rounded-3xl p-8 text-center transition-all duration-300 border-2 ${
+            isOnline
+              ? "bg-success-50 border-success-500/30"
+              : "bg-danger-50 border-danger-500/30"
           }`}
           aria-live="polite"
+          role="status"
         >
-          <div className="text-6xl mb-4">{isOnline ? "📶" : "❌"}</div>
-          <h1 className="text-4xl font-bold mb-2">
+          <div className={`w-20 h-20 mx-auto mb-5 rounded-full flex items-center justify-center ${
+            isOnline ? "bg-success-500/20" : "bg-danger-500/20"
+          }`}>
+            {isOnline ? (
+              <svg className="w-10 h-10 text-success-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M5 12.55a11 11 0 0114.08 0M8.53 16.11a6 6 0 016.95 0M12 20h.01" />
+              </svg>
+            ) : (
+              <svg className="w-10 h-10 text-danger-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+            )}
+          </div>
+          <h1 className="text-4xl font-extrabold mb-2 text-slate-100">
             {cane ? cane.name : "Niciun baston asociat"}
           </h1>
-          <p className="text-2xl font-semibold">{isOnline ? "ONLINE" : "OFFLINE"}</p>
+          <p className={`text-2xl font-bold tracking-wider ${isOnline ? "text-success-400" : "text-danger-400"}`}>
+            {isOnline ? "ONLINE" : "OFFLINE"}
+          </p>
           {location && (
-            <p className="text-lg text-white/70 mt-3">
+            <p className="text-base text-slate-500 mt-3">
               Ultima actualizare: {formatTime(location.recorded_at)}
             </p>
           )}
         </section>
 
-        {/* Active destination */}
+        {/* Active destination hero */}
         {activeDest && (
-          <section className="bg-blue-800 rounded-3xl p-6">
-            <p className="text-sm font-semibold text-blue-200 uppercase tracking-widest mb-2">
+          <section className="bg-accent-500/10 border-2 border-accent-500/25 rounded-3xl p-6" aria-label="Destinație activă">
+            <p className="text-xs font-bold text-accent-300 uppercase tracking-[0.2em] mb-2">
               Destinație activă
             </p>
-            <p className="text-3xl font-bold">{activeDest.name}</p>
-            <p className="text-blue-300 text-lg mt-1">
+            <p className="text-3xl font-extrabold text-slate-100">{activeDest.name}</p>
+            <p className="text-accent-300/60 text-base mt-1 font-mono tabular-nums">
               {activeDest.latitude.toFixed(5)}, {activeDest.longitude.toFixed(5)}
             </p>
-            <div className="mt-4 flex gap-3">
+            <div className="mt-5 grid grid-cols-2 gap-3">
               <button
-                onClick={() =>
-                  tap(
-                    `read-active`,
-                    `Citire destinație activă: ${activeDest.name}`,
-                    () => speakNow(`Destinație activă: ${activeDest.name}`)
-                  )
-                }
-                className={btnClass("read-active", "flex-1 py-4 bg-blue-700 hover:bg-blue-600 rounded-2xl text-lg font-bold")}
+                onClick={() => tap("read-active", `Citire: ${activeDest.name}`, () => speakNow(`Destinație activă: ${activeDest.name}`))}
+                className={`py-5 rounded-2xl text-lg font-bold transition-all duration-200
+                  ${isPending("read-active")
+                    ? "bg-warning-500 text-surface-0 ring-4 ring-warning-400/40 scale-95"
+                    : "bg-accent-500/20 hover:bg-accent-500/30 text-accent-300 border border-accent-500/20"
+                  }`}
                 aria-label="Citește destinația activă"
               >
-                🔊 Citește
+                Citește
               </button>
               <button
-                onClick={() =>
-                  tap(
-                    `deactivate-active`,
-                    `Dezactivare destinație: ${activeDest.name}`,
-                    () => doDeactivate(activeDest.id, activeDest.name)
-                  )
-                }
-                className={btnClass("deactivate-active", "flex-1 py-4 bg-red-800 hover:bg-red-700 rounded-2xl text-lg font-bold")}
+                onClick={() => tap("deactivate-active", `Oprire: ${activeDest.name}`, () => doDeactivate(activeDest.id, activeDest.name))}
+                className={`py-5 rounded-2xl text-lg font-bold transition-all duration-200
+                  ${isPending("deactivate-active")
+                    ? "bg-warning-500 text-surface-0 ring-4 ring-warning-400/40 scale-95"
+                    : "bg-danger-500/15 hover:bg-danger-500/25 text-danger-400 border border-danger-500/20"
+                  }`}
                 aria-label="Oprește destinația activă"
               >
-                ✕ Oprește
+                Oprește
               </button>
             </div>
           </section>
         )}
 
         {/* Destinations list */}
-        <section>
-          <h2 className="text-xl font-bold text-gray-200 mb-3">Destinații disponibile</h2>
+        <section aria-label="Lista destinații">
+          <h2 className="text-lg font-bold text-slate-300 mb-3 px-1">Destinații disponibile</h2>
 
           {destinations.length === 0 && (
-            <p className="text-gray-500 text-lg text-center py-6">
-              Aparținătorul tău nu a adăugat încă nicio destinație.
-            </p>
+            <div className="text-center py-10 text-slate-600 text-lg">
+              Aparținătorul tău nu a adăugat încă destinații.
+            </div>
           )}
 
-          <ul className="flex flex-col gap-3">
+          <ul className="flex flex-col gap-2">
             {destinations.map((dest) => (
               <li
                 key={dest.id}
-                className={`rounded-2xl p-5 flex items-center justify-between gap-3 ${
-                  dest.active ? "bg-blue-900 border-2 border-blue-500" : "bg-gray-800"
+                className={`rounded-2xl p-5 flex items-center justify-between gap-4 transition-all border-2 ${
+                  dest.active
+                    ? "bg-accent-500/8 border-accent-500/25"
+                    : "bg-surface-100 border-white/[0.06] hover:border-white/[0.1]"
                 }`}
               >
                 <div className="flex-1 min-w-0">
-                  <p className="text-xl font-bold truncate">{dest.name}</p>
-                  <p className="text-gray-400 text-sm mt-0.5">
+                  <p className="text-xl font-bold truncate text-slate-100">{dest.name}</p>
+                  <p className="text-slate-500 text-sm mt-0.5 font-mono tabular-nums">
                     {dest.latitude.toFixed(5)}, {dest.longitude.toFixed(5)}
                   </p>
                   {dest.active && (
-                    <span className="inline-block mt-1 text-xs font-semibold text-blue-300 uppercase tracking-wider">
-                      ✓ Activă
+                    <span className="inline-block mt-1.5 text-xs font-bold text-accent-300 uppercase tracking-wider">
+                      Activă
                     </span>
                   )}
                 </div>
                 {dest.active ? (
                   <button
-                    onClick={() =>
-                      tap(
-                        `deactivate-${dest.id}`,
-                        `Dezactivare destinație: ${dest.name}`,
-                        () => doDeactivate(dest.id, dest.name)
-                      )
-                    }
-                    className={btnClass(`deactivate-${dest.id}`, "bg-gray-700 hover:bg-red-800 text-white px-4 py-3 rounded-xl text-sm font-semibold shrink-0")}
+                    onClick={() => tap(`deact-${dest.id}`, `Oprire: ${dest.name}`, () => doDeactivate(dest.id, dest.name))}
+                    className={`px-5 py-3.5 rounded-xl text-sm font-bold transition-all shrink-0
+                      ${isPending(`deact-${dest.id}`)
+                        ? "bg-warning-500 text-surface-0 ring-4 ring-warning-400/40 scale-95"
+                        : "bg-danger-500/15 hover:bg-danger-500/25 text-danger-400 border border-danger-500/20"
+                      }`}
                     aria-label={`Dezactivează ${dest.name}`}
                   >
-                    ✕ Oprește
+                    Oprește
                   </button>
                 ) : (
                   <button
-                    onClick={() =>
-                      tap(
-                        `activate-${dest.id}`,
-                        `Activare destinație: ${dest.name}`,
-                        () => doActivate(dest.id, dest.name)
-                      )
-                    }
-                    className={btnClass(`activate-${dest.id}`, "bg-blue-700 hover:bg-blue-600 text-white px-4 py-3 rounded-xl text-sm font-semibold shrink-0")}
+                    onClick={() => tap(`act-${dest.id}`, `Activare: ${dest.name}`, () => doActivate(dest.id, dest.name))}
+                    className={`px-5 py-3.5 rounded-xl text-sm font-bold transition-all shrink-0
+                      ${isPending(`act-${dest.id}`)
+                        ? "bg-warning-500 text-surface-0 ring-4 ring-warning-400/40 scale-95"
+                        : "bg-accent-500/15 hover:bg-accent-500/25 text-accent-300 border border-accent-500/20"
+                      }`}
                     aria-label={`Activează ${dest.name}`}
                   >
-                    ✓ Activează
+                    Activează
                   </button>
                 )}
               </li>
@@ -332,13 +330,15 @@ export default function BlindPage() {
 
         {/* Read status */}
         <button
-          onClick={() =>
-            tap("read-status", "Citire stare curentă", doReadStatus)
-          }
-          className={btnClass("read-status", "w-full py-5 bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded-3xl text-2xl font-bold")}
+          onClick={() => tap("read-status", "Citire stare curentă", doReadStatus)}
+          className={`w-full py-6 rounded-3xl text-xl font-bold transition-all duration-200
+            ${isPending("read-status")
+              ? "bg-warning-500 text-surface-0 ring-4 ring-warning-400/40 scale-[0.98]"
+              : "bg-surface-100 hover:bg-surface-200 border-2 border-white/[0.06] hover:border-white/[0.1] text-slate-200"
+            }`}
           aria-label="Citește starea curentă"
         >
-          🔊 Citește starea curentă
+          Citește starea curentă
         </button>
 
       </main>

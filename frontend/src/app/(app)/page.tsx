@@ -11,12 +11,13 @@ import LocationPanel from "@/components/LocationPanel";
 import OnboardingModal from "@/components/OnboardingModal";
 import RegisterBlindUserModal from "@/components/RegisterBlindUserModal";
 import ManageDestinationsModal from "@/components/ManageDestinationsModal";
+import { Badge, Logo, EmptyState, Spinner } from "@/components/ui";
 
 const CaneMap = dynamic(() => import("@/components/CaneMap"), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-400">
-      <p>Se încarcă harta…</p>
+    <div className="w-full h-full flex items-center justify-center bg-surface-50">
+      <Spinner size="lg" />
     </div>
   ),
 });
@@ -37,21 +38,18 @@ export default function TrackingPage() {
 
   const activeCane = canes.find((c) => c.id === activeCaneId) ?? null;
 
-  // Request notification permission once
   useEffect(() => {
     if (typeof Notification !== "undefined" && Notification.permission === "default") {
       Notification.requestPermission();
     }
   }, []);
 
-  // Onboarding
   useEffect(() => {
     if (!localStorage.getItem("solemtrix_onboarding_done")) {
       setShowOnboarding(true);
     }
   }, []);
 
-  // Load canes
   useEffect(() => {
     api.get<Cane[]>("/canes/").then((data) => {
       setCanes(data);
@@ -60,7 +58,6 @@ export default function TrackingPage() {
     }).catch(() => setLoadingCanes(false));
   }, []);
 
-  // Poll location
   const fetchLocation = useCallback(() => {
     if (!activeCaneId) return;
     api.get<Location | null>(`/locations/${activeCaneId}/latest`)
@@ -75,7 +72,6 @@ export default function TrackingPage() {
     return () => clearInterval(interval);
   }, [fetchLocation]);
 
-  // Browser notification when GPS goes offline
   useEffect(() => {
     const isOnline =
       location != null &&
@@ -85,7 +81,6 @@ export default function TrackingPage() {
       if (typeof Notification !== "undefined" && Notification.permission === "granted") {
         new Notification("Solemtrix — semnal pierdut", {
           body: `Bastonul "${activeCane.name}" nu mai trimite locație.`,
-          icon: "/favicon.svg",
         });
       }
     }
@@ -112,7 +107,7 @@ export default function TrackingPage() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
+    <div className="flex h-screen overflow-hidden bg-surface-0">
       {showOnboarding && (
         <OnboardingModal onClose={() => setShowOnboarding(false)} />
       )}
@@ -121,7 +116,6 @@ export default function TrackingPage() {
           onClose={() => setShowRegisterBlind(false)}
           onCreated={(_user, cane) => {
             if (cane) handleCaneAdded(cane);
-            // Refresh full cane list to ensure sidebar is up to date
             api.get<Cane[]>("/canes/").then((data) => {
               setCanes(data);
               if (!activeCaneId && data.length > 0) setActiveCaneId(data[0].id);
@@ -145,67 +139,60 @@ export default function TrackingPage() {
       />
 
       <main className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-13 flex-shrink-0 bg-white border-b border-gray-100 flex items-center justify-between px-5">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">🦯</span>
-            <span className="font-bold text-blue-800 tracking-tight">Solemtrix</span>
-            {role === "admin" && (
-              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-semibold ml-1">
-                Admin
-              </span>
-            )}
+        {/* Top nav */}
+        <header className="h-14 flex-shrink-0 bg-surface-50 border-b border-white/[0.06] flex items-center justify-between px-5">
+          <div className="flex items-center gap-3">
+            <Logo size="sm" />
+            {role === "admin" && <Badge variant="accent">Admin</Badge>}
           </div>
-          <div className="flex items-center gap-1">
+
+          <nav className="flex items-center gap-1">
             {role === "caregiver" && (
               <button
                 onClick={() => setShowRegisterBlind(true)}
-                className="px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
-                title="Înregistrează utilizator nevăzător"
+                className="px-3 py-1.5 text-xs font-medium text-slate-400 hover:text-slate-100 hover:bg-white/[0.06] rounded-lg transition-colors"
               >
-                👤+ Orb
+                + Nevăzător
               </button>
             )}
             {(role === "caregiver" || role === "admin") && canes.length > 0 && (
               <button
                 onClick={() => setShowDestinations(true)}
-                className="px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
-                title="Gestionează destinații nevăzători"
+                className="px-3 py-1.5 text-xs font-medium text-slate-400 hover:text-slate-100 hover:bg-white/[0.06] rounded-lg transition-colors"
               >
-                📍 Destinații
+                Destinații
               </button>
             )}
             {role === "admin" && (
-              <Link
-                href="/admin"
-                className="px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                🛡 Admin
+              <Link href="/admin" className="px-3 py-1.5 text-xs font-medium text-slate-400 hover:text-slate-100 hover:bg-white/[0.06] rounded-lg transition-colors">
+                Admin
               </Link>
             )}
-            <Link href="/simulator" className="px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors">
-              🛠 Simulator
+            <Link href="/simulator" className="px-3 py-1.5 text-xs font-medium text-slate-400 hover:text-slate-100 hover:bg-white/[0.06] rounded-lg transition-colors">
+              Simulator
             </Link>
-            <Link href="/settings" className="px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors">
-              ⚙ Setări
+            <Link href="/settings" className="px-3 py-1.5 text-xs font-medium text-slate-400 hover:text-slate-100 hover:bg-white/[0.06] rounded-lg transition-colors">
+              Setări
             </Link>
-          </div>
+          </nav>
         </header>
 
         <div className="flex-1 relative overflow-hidden">
           {loadingCanes ? (
-            <div className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-400">
-              <p>Se încarcă…</p>
+            <div className="w-full h-full flex items-center justify-center bg-surface-50">
+              <Spinner size="lg" />
             </div>
           ) : canes.length === 0 ? (
-            <div className="w-full h-full flex items-center justify-center bg-slate-50">
-              <div className="text-center max-w-sm px-6">
-                <span className="text-6xl block mb-4">🦯</span>
-                <h2 className="text-xl font-bold text-blue-800 mb-2">Niciun baston asociat</h2>
-                <p className="text-gray-500 text-sm leading-relaxed">
-                  Apasă butonul <strong>+</strong> din bara laterală pentru a
-                  asocia primul tău baston prin codul QR.
-                </p>
-              </div>
+            <div className="w-full h-full flex items-center justify-center bg-surface-50">
+              <EmptyState
+                icon={
+                  <svg className="w-12 h-12 text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                    <path d="M12 2v20M8 6l4-4 4 4" />
+                  </svg>
+                }
+                title="Niciun baston asociat"
+                description="Adaugă un utilizator nevăzător pentru a genera automat un baston și a-l urmări pe hartă."
+              />
             </div>
           ) : (
             <>

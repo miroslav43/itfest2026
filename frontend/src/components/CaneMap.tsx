@@ -3,10 +3,25 @@
 import { useCallback, useRef } from "react";
 import { GoogleMap, useJsApiLoader } from "@react-google-maps/api";
 import type { Location } from "@/types";
+import { Spinner } from "@/components/ui";
 
 const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "";
-const DEFAULT_CENTER = { lat: 44.4268, lng: 26.1025 }; // București
-const LIBRARIES: ("places")[] = ["places"]; // must be stable reference
+const DEFAULT_CENTER = { lat: 44.4268, lng: 26.1025 };
+const LIBRARIES: ("places")[] = ["places"];
+
+const DARK_MAP_STYLES: google.maps.MapTypeStyle[] = [
+  { elementType: "geometry", stylers: [{ color: "#1a1a2e" }] },
+  { elementType: "labels.text.stroke", stylers: [{ color: "#1a1a2e" }] },
+  { elementType: "labels.text.fill", stylers: [{ color: "#64748b" }] },
+  { featureType: "administrative", elementType: "geometry.stroke", stylers: [{ color: "#2e3247" }] },
+  { featureType: "road", elementType: "geometry", stylers: [{ color: "#252838" }] },
+  { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#64748b" }] },
+  { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#2e3247" }] },
+  { featureType: "water", elementType: "geometry", stylers: [{ color: "#0f1117" }] },
+  { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#3e4451" }] },
+  { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] },
+  { featureType: "transit", elementType: "labels", stylers: [{ visibility: "off" }] },
+];
 
 const MAP_OPTIONS: google.maps.MapOptions = {
   disableDefaultUI: false,
@@ -14,9 +29,7 @@ const MAP_OPTIONS: google.maps.MapOptions = {
   mapTypeControl: false,
   streetViewControl: false,
   fullscreenControl: true,
-  styles: [
-    { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] },
-  ],
+  styles: DARK_MAP_STYLES,
 };
 
 interface Props {
@@ -37,12 +50,9 @@ export default function CaneMap({ location, caneName }: Props) {
     mapRef.current = map;
   }, []);
 
-  // Update or create marker when location changes
   const onMapIdle = useCallback(() => {
     if (!mapRef.current || !location) return;
-
     const pos = { lat: location.latitude, lng: location.longitude };
-
     if (markerRef.current) {
       markerRef.current.setPosition(pos);
     } else {
@@ -52,17 +62,16 @@ export default function CaneMap({ location, caneName }: Props) {
         title: caneName ?? "Baston",
         icon: {
           path: window.google.maps.SymbolPath.CIRCLE,
-          scale: 12,
-          fillColor: "#2563eb",
+          scale: 14,
+          fillColor: "#6366f1",
           fillOpacity: 1,
-          strokeColor: "#ffffff",
-          strokeWeight: 3,
+          strokeColor: "#a5b4fc",
+          strokeWeight: 4,
         },
       });
     }
   }, [location, caneName]);
 
-  // Remove marker when location is null
   const handleLocationCleared = useCallback(() => {
     if (!location && markerRef.current) {
       markerRef.current.setMap(null);
@@ -72,12 +81,17 @@ export default function CaneMap({ location, caneName }: Props) {
 
   if (!API_KEY || API_KEY === "your_google_maps_api_key_here") {
     return (
-      <div className="w-full h-full flex flex-col items-center justify-center bg-slate-100 text-slate-500 gap-2">
-        <p className="font-semibold">Cheie API Google Maps lipsă</p>
-        <p className="text-sm text-slate-400 text-center max-w-xs">
-          Adaugă <code className="bg-slate-200 px-1 rounded">NEXT_PUBLIC_GOOGLE_MAPS_API_KEY</code>{" "}
-          în <code className="bg-slate-200 px-1 rounded">frontend/.env.local</code>{" "}
-          și repornește serverul.
+      <div className="w-full h-full flex flex-col items-center justify-center bg-surface-50 gap-3">
+        <div className="w-12 h-12 rounded-2xl bg-surface-200 border border-white/[0.06] flex items-center justify-center">
+          <svg className="w-5 h-5 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
+            <circle cx="12" cy="10" r="3" />
+          </svg>
+        </div>
+        <p className="font-semibold text-slate-300 text-sm">Cheie API Google Maps lipsă</p>
+        <p className="text-xs text-slate-500 text-center max-w-xs">
+          Adaugă <code className="text-accent-400 bg-accent-500/10 px-1.5 py-0.5 rounded">NEXT_PUBLIC_GOOGLE_MAPS_API_KEY</code> în{" "}
+          <code className="text-accent-400 bg-accent-500/10 px-1.5 py-0.5 rounded">frontend/.env.local</code>
         </p>
       </div>
     );
@@ -85,17 +99,17 @@ export default function CaneMap({ location, caneName }: Props) {
 
   if (loadError) {
     return (
-      <div className="w-full h-full flex flex-col items-center justify-center bg-slate-100 text-slate-500 gap-1">
-        <p className="font-semibold">Nu s-a putut încărca harta.</p>
-        <p className="text-sm text-slate-400">Verifică cheia API și conexiunea la internet.</p>
+      <div className="w-full h-full flex flex-col items-center justify-center bg-surface-50 text-slate-400 gap-2">
+        <p className="font-semibold text-sm">Nu s-a putut încărca harta.</p>
+        <p className="text-xs text-slate-500">Verifică cheia API și conexiunea.</p>
       </div>
     );
   }
 
   if (!isLoaded) {
     return (
-      <div className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-400">
-        <p>Se încarcă harta…</p>
+      <div className="w-full h-full flex items-center justify-center bg-surface-50">
+        <Spinner size="lg" />
       </div>
     );
   }
@@ -110,10 +124,7 @@ export default function CaneMap({ location, caneName }: Props) {
       center={center}
       zoom={location ? 16 : 12}
       options={MAP_OPTIONS}
-      onLoad={(map) => {
-        onLoad(map);
-        handleLocationCleared();
-      }}
+      onLoad={(map) => { onLoad(map); handleLocationCleared(); }}
       onIdle={onMapIdle}
     />
   );

@@ -6,6 +6,7 @@ import { api, ApiError } from "@/lib/api";
 import { getRole } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 import type { User, Cane, Role } from "@/types";
+import { Button, Input, Badge, Card, StatCard, Modal, Logo, Spinner } from "@/components/ui";
 
 const ROLE_LABELS: Record<Role, string> = {
   admin: "Administrator",
@@ -13,10 +14,10 @@ const ROLE_LABELS: Record<Role, string> = {
   blind_user: "Nevăzător",
 };
 
-const ROLE_COLORS: Record<Role, string> = {
-  admin: "bg-purple-100 text-purple-700",
-  caregiver: "bg-blue-100 text-blue-700",
-  blind_user: "bg-amber-100 text-amber-700",
+const ROLE_BADGE: Record<Role, "accent" | "success" | "warning"> = {
+  admin: "accent",
+  caregiver: "success",
+  blind_user: "warning",
 };
 
 interface Stats {
@@ -38,13 +39,11 @@ export default function AdminPage() {
   const [tab, setTab] = useState<"users" | "canes">("users");
   const [modal, setModal] = useState<ModalType>(null);
 
-  // Caregiver form
   const [cgEmail, setCgEmail] = useState("");
   const [cgPassword, setCgPassword] = useState("");
   const [cgError, setCgError] = useState("");
   const [cgLoading, setCgLoading] = useState(false);
 
-  // Blind user form
   const [buEmail, setBuEmail] = useState("");
   const [buPassword, setBuPassword] = useState("");
   const [buCaneName, setBuCaneName] = useState("Baston");
@@ -61,7 +60,6 @@ export default function AdminPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 
-  // Pre-select first caregiver when modal opens
   useEffect(() => {
     if (modal === "blind" && caregivers.length > 0 && !buCaregiverId) {
       setBuCaregiverId(caregivers[0].id);
@@ -75,9 +73,7 @@ export default function AdminPage() {
         api.get<Cane[]>("/admin/canes"),
         api.get<Stats>("/admin/stats"),
       ]);
-      setUsers(u);
-      setCanes(c);
-      setStats(s);
+      setUsers(u); setCanes(c); setStats(s);
     } finally {
       setLoading(false);
     }
@@ -102,7 +98,7 @@ export default function AdminPage() {
   }
 
   async function handleDelete(userId: string, email: string) {
-    if (!confirm(`Ștergi contul ${email}? Această acțiune nu poate fi anulată.`)) return;
+    if (!confirm(`Ștergi contul ${email}?`)) return;
     try {
       await api.delete(`/admin/users/${userId}`);
       setUsers((prev) => prev.filter((u) => u.id !== userId));
@@ -114,8 +110,7 @@ export default function AdminPage() {
 
   async function handleCreateCaregiver(e: React.FormEvent) {
     e.preventDefault();
-    setCgError("");
-    setCgLoading(true);
+    setCgError(""); setCgLoading(true);
     try {
       const user = await api.post<User>("/admin/users", { email: cgEmail, password: cgPassword, role: "caregiver" });
       setUsers((prev) => [...prev, user]);
@@ -123,9 +118,7 @@ export default function AdminPage() {
       setModal(null);
     } catch (err) {
       setCgError(err instanceof ApiError ? err.detail : "A apărut o eroare.");
-    } finally {
-      setCgLoading(false);
-    }
+    } finally { setCgLoading(false); }
   }
 
   async function handleCreateBlindUser(e: React.FormEvent) {
@@ -135,167 +128,170 @@ export default function AdminPage() {
     setBuLoading(true);
     try {
       const result = await api.post<{ user: User; cane: Cane }>("/blind-users/", {
-        email: buEmail,
-        password: buPassword,
-        cane_name: buCaneName,
-        caregiver_id: buCaregiverId,
+        email: buEmail, password: buPassword, cane_name: buCaneName, caregiver_id: buCaregiverId,
       });
       setUsers((prev) => [...prev, result.user]);
       setCanes((prev) => [...prev, result.cane]);
-      setStats((s) => s ? {
-        ...s,
-        total_users: s.total_users + 1,
-        total_blind_users: s.total_blind_users + 1,
-        total_canes: s.total_canes + 1,
-      } : s);
+      setStats((s) => s ? { ...s, total_users: s.total_users + 1, total_blind_users: s.total_blind_users + 1, total_canes: s.total_canes + 1 } : s);
       setModal(null);
     } catch (err) {
       setBuError(err instanceof ApiError ? err.detail : "A apărut o eroare.");
-    } finally {
-      setBuLoading(false);
-    }
+    } finally { setBuLoading(false); }
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-gray-400">
-        Se încarcă panoul admin…
+      <div className="min-h-screen flex items-center justify-center">
+        <Spinner size="lg" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-10">
-      <header className="bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className="text-xl">🛡</span>
-          <span className="font-bold text-blue-800 text-lg">Panou Administrator</span>
-          <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-semibold">Solemtrix</span>
+    <div className="min-h-screen bg-surface-0 pb-10">
+      {/* Header */}
+      <header className="bg-surface-50 border-b border-white/[0.06] px-6 py-4 flex items-center justify-between sticky top-0 z-30">
+        <div className="flex items-center gap-4">
+          <Logo size="sm" />
+          <div className="h-5 w-px bg-white/[0.08]" />
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-slate-200 text-sm">Panou Administrator</span>
+            <Badge variant="accent">Admin</Badge>
+          </div>
         </div>
-        <Link href="/" className="text-sm text-blue-600 hover:underline">← Hartă</Link>
+        <Link href="/" className="text-sm text-slate-400 hover:text-accent-400 transition-colors flex items-center gap-1.5">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M10 4L6 8l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          Hartă
+        </Link>
       </header>
 
-      <div className="max-w-4xl mx-auto px-4 pt-6">
+      <div className="max-w-5xl mx-auto px-6 pt-8">
         {/* Stats */}
         {stats && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-            {[
-              { label: "Utilizatori total", value: stats.total_users, color: "text-blue-700" },
-              { label: "Aparținători", value: stats.total_caregivers, color: "text-blue-600" },
-              { label: "Nevăzători", value: stats.total_blind_users, color: "text-amber-600" },
-              { label: "Bastoane", value: stats.total_canes, color: "text-gray-700" },
-            ].map((s) => (
-              <div key={s.label} className="bg-white rounded-xl shadow-sm p-4 text-center">
-                <div className={`text-3xl font-bold ${s.color}`}>{s.value}</div>
-                <div className="text-xs text-gray-500 mt-1">{s.label}</div>
-              </div>
-            ))}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <StatCard label="Total utilizatori" value={stats.total_users} color="accent" icon={
+              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4-4v-2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" /></svg>
+            } />
+            <StatCard label="Aparținători" value={stats.total_caregivers} color="success" icon={
+              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4-4V9" /><circle cx="12" cy="7" r="4" /></svg>
+            } />
+            <StatCard label="Nevăzători" value={stats.total_blind_users} color="warning" icon={
+              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="3" /><path d="M2 12s4-8 10-8 10 8 10 8-4 8-10 8-10-8-10-8" /></svg>
+            } />
+            <StatCard label="Bastoane" value={stats.total_canes} color="accent" icon={
+              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M12 2v20M8 6l4-4 4 4" /></svg>
+            } />
           </div>
         )}
 
-        {/* Tabs + action buttons */}
-        <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
-          <div className="flex gap-0 border border-gray-200 rounded-xl overflow-hidden w-fit">
-            <button onClick={() => setTab("users")} className={`px-5 py-2 text-sm font-medium transition-colors ${tab === "users" ? "bg-blue-600 text-white" : "text-gray-600 hover:bg-gray-50"}`}>
-              Utilizatori ({users.length})
-            </button>
-            <button onClick={() => setTab("canes")} className={`px-5 py-2 text-sm font-medium transition-colors ${tab === "canes" ? "bg-blue-600 text-white" : "text-gray-600 hover:bg-gray-50"}`}>
-              Bastoane ({canes.length})
-            </button>
+        {/* Tabs + actions */}
+        <div className="flex items-center justify-between mb-6 gap-3 flex-wrap">
+          <div className="flex gap-1 p-1 bg-surface-100 rounded-xl border border-white/[0.06]">
+            {(["users", "canes"] as const).map((t) => (
+              <button
+                key={t}
+                onClick={() => setTab(t)}
+                className={`px-5 py-2 text-sm font-medium rounded-lg transition-all ${
+                  tab === t
+                    ? "bg-accent-500 text-white shadow-glow"
+                    : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]"
+                }`}
+              >
+                {t === "users" ? `Utilizatori (${users.length})` : `Bastoane (${canes.length})`}
+              </button>
+            ))}
           </div>
 
           {tab === "users" && (
             <div className="flex gap-2">
-              <button
-                onClick={() => openModal("caregiver")}
-                className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors"
-              >
+              <Button size="sm" onClick={() => openModal("caregiver")}>
                 + Aparținător
-              </button>
-              <button
-                onClick={() => openModal("blind")}
-                className="flex items-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold rounded-xl transition-colors"
-              >
-                + Orb
-              </button>
+              </Button>
+              <Button size="sm" variant="secondary" onClick={() => openModal("blind")}>
+                + Nevăzător
+              </Button>
             </div>
           )}
         </div>
 
         {/* Users table */}
         {tab === "users" && (
-          <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-100">
-                <tr>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-600">Email</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-600">Rol curent</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-600">Schimbă rol</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-600">Înregistrat</th>
-                  <th className="px-4 py-3"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map((user) => (
-                  <tr key={user.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50">
-                    <td className="px-4 py-3 text-gray-800 font-medium">{user.email}</td>
-                    <td className="px-4 py-3">
-                      <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${ROLE_COLORS[user.role as Role]}`}>
-                        {ROLE_LABELS[user.role as Role]}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <select
-                        className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white outline-none focus:border-blue-500 disabled:opacity-40"
-                        value={user.role}
-                        disabled={updatingId === user.id}
-                        onChange={(e) => handleRoleChange(user.id, e.target.value as Role)}
-                      >
-                        <option value="admin">Administrator</option>
-                        <option value="caregiver">Aparținător</option>
-                        <option value="blind_user">Nevăzător</option>
-                      </select>
-                    </td>
-                    <td className="px-4 py-3 text-gray-400 text-xs">
-                      {new Date(user.created_at).toLocaleDateString("ro-RO")}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <button
-                        onClick={() => handleDelete(user.id, user.email)}
-                        className="text-red-400 hover:text-red-600 text-xs px-2 py-1 rounded hover:bg-red-50 transition-colors"
-                      >
-                        Șterge
-                      </button>
-                    </td>
+          <Card>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-white/[0.06]">
+                    <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">Email</th>
+                    <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">Rol</th>
+                    <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">Schimbă rol</th>
+                    <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">Înregistrat</th>
+                    <th className="px-5 py-3.5"></th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {users.map((user) => (
+                    <tr key={user.id} className="border-b border-white/[0.03] last:border-0 hover:bg-white/[0.02] transition-colors">
+                      <td className="px-5 py-3.5 text-slate-200 font-medium">{user.email}</td>
+                      <td className="px-5 py-3.5">
+                        <Badge variant={ROLE_BADGE[user.role as Role]}>
+                          {ROLE_LABELS[user.role as Role]}
+                        </Badge>
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <select
+                          className="text-xs bg-surface-200 border border-white/[0.06] rounded-lg px-3 py-1.5 text-slate-300 outline-none focus:border-accent-500/50 disabled:opacity-40 cursor-pointer"
+                          value={user.role}
+                          disabled={updatingId === user.id}
+                          onChange={(e) => handleRoleChange(user.id, e.target.value as Role)}
+                        >
+                          <option value="admin">Administrator</option>
+                          <option value="caregiver">Aparținător</option>
+                          <option value="blind_user">Nevăzător</option>
+                        </select>
+                      </td>
+                      <td className="px-5 py-3.5 text-slate-500 text-xs tabular-nums">
+                        {new Date(user.created_at).toLocaleDateString("ro-RO")}
+                      </td>
+                      <td className="px-5 py-3.5 text-right">
+                        <Button size="sm" variant="danger" onClick={() => handleDelete(user.id, user.email)}>
+                          Șterge
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
         )}
 
         {/* Canes table */}
         {tab === "canes" && (
-          <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-100">
-                <tr>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-600">ID Baston</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-600">Nume</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-600">Creat</th>
-                  <th className="px-4 py-3"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {canes.map((cane) => (
-                  <tr key={cane.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50">
-                    <td className="px-4 py-3 font-mono text-xs text-gray-500">{cane.id}</td>
-                    <td className="px-4 py-3 font-medium text-gray-800">🦯 {cane.name}</td>
-                    <td className="px-4 py-3 text-gray-400 text-xs">{new Date(cane.created_at).toLocaleDateString("ro-RO")}</td>
-                    <td className="px-4 py-3 text-right">
-                      <button
-                        onClick={async () => {
-                          if (!confirm(`Ștergi bastonul "${cane.name}" complet din sistem?`)) return;
+          <Card>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-white/[0.06]">
+                    <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">ID Baston</th>
+                    <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">Nume</th>
+                    <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">Creat</th>
+                    <th className="px-5 py-3.5"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {canes.map((cane) => (
+                    <tr key={cane.id} className="border-b border-white/[0.03] last:border-0 hover:bg-white/[0.02] transition-colors">
+                      <td className="px-5 py-3.5 font-mono text-xs text-slate-500">{cane.id}</td>
+                      <td className="px-5 py-3.5 font-medium text-slate-200">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-accent-400" />
+                          {cane.name}
+                        </div>
+                      </td>
+                      <td className="px-5 py-3.5 text-slate-500 text-xs tabular-nums">{new Date(cane.created_at).toLocaleDateString("ro-RO")}</td>
+                      <td className="px-5 py-3.5 text-right">
+                        <Button size="sm" variant="danger" onClick={async () => {
+                          if (!confirm(`Ștergi bastonul "${cane.name}"?`)) return;
                           try {
                             await api.delete(`/admin/canes/${cane.id}`);
                             setCanes((prev) => prev.filter((c) => c.id !== cane.id));
@@ -303,100 +299,75 @@ export default function AdminPage() {
                           } catch (err) {
                             alert(err instanceof ApiError ? err.detail : "Eroare la ștergere.");
                           }
-                        }}
-                        className="text-red-400 hover:text-red-600 text-xs px-2 py-1 rounded hover:bg-red-50 transition-colors"
-                      >
-                        Șterge
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                        }}>
+                          Șterge
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
         )}
       </div>
 
-      {/* ── Modal: Adaugă aparținător ── */}
+      {/* Modal: Adaugă aparținător */}
       {modal === "caregiver" && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/45 px-4" onClick={(e) => e.target === e.currentTarget && setModal(null)}>
-          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-blue-800">Adaugă aparținător</h2>
-              <button onClick={() => setModal(null)} className="text-gray-400 hover:text-gray-600">✕</button>
-            </div>
-            {cgError && <div className="mb-3 px-3 py-2 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">{cgError}</div>}
-            <form onSubmit={handleCreateCaregiver} className="flex flex-col gap-3">
-              <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
-                Email
-                <input type="email" className="px-3 py-2 border border-gray-200 rounded-lg outline-none focus:border-blue-500 text-sm" value={cgEmail} onChange={(e) => setCgEmail(e.target.value)} placeholder="aparti nator@email.com" required autoFocus />
-              </label>
-              <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
-                Parolă
-                <input type="password" className="px-3 py-2 border border-gray-200 rounded-lg outline-none focus:border-blue-500 text-sm" value={cgPassword} onChange={(e) => setCgPassword(e.target.value)} placeholder="min. 6 caractere" required />
-              </label>
-              <button type="submit" disabled={cgLoading} className="py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold rounded-lg text-sm transition-colors mt-1">
-                {cgLoading ? "Se creează…" : "Creează cont aparținător"}
-              </button>
-            </form>
-          </div>
-        </div>
+        <Modal title="Adaugă aparținător" description="Creează un cont nou de tip aparținător." onClose={() => setModal(null)}>
+          {cgError && (
+            <div className="mb-4 px-4 py-3 bg-danger-500/10 border border-danger-500/20 text-danger-400 rounded-xl text-sm font-medium">{cgError}</div>
+          )}
+          <form onSubmit={handleCreateCaregiver} className="flex flex-col gap-4">
+            <Input type="email" label="Email" value={cgEmail} onChange={(e) => setCgEmail(e.target.value)} placeholder="aparti nator@email.com" required autoFocus />
+            <Input type="password" label="Parolă" value={cgPassword} onChange={(e) => setCgPassword(e.target.value)} placeholder="min. 6 caractere" required />
+            <Button type="submit" disabled={cgLoading} size="lg" className="w-full mt-2">
+              {cgLoading ? <><Spinner size="sm" /> Se creează...</> : "Creează cont aparținător"}
+            </Button>
+          </form>
+        </Modal>
       )}
 
-      {/* ── Modal: Adaugă orb ── */}
+      {/* Modal: Adaugă orb */}
       {modal === "blind" && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/45 px-4" onClick={(e) => e.target === e.currentTarget && setModal(null)}>
-          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-amber-700">Adaugă utilizator nevăzător</h2>
-              <button onClick={() => setModal(null)} className="text-gray-400 hover:text-gray-600">✕</button>
+        <Modal title="Adaugă utilizator nevăzător" description="Un baston va fi creat automat și atribuit aparținătorului." onClose={() => setModal(null)}>
+          {buError && (
+            <div className="mb-4 px-4 py-3 bg-danger-500/10 border border-danger-500/20 text-danger-400 rounded-xl text-sm font-medium">{buError}</div>
+          )}
+          {caregivers.length === 0 ? (
+            <div className="py-8 text-center text-slate-500 text-sm">
+              Nu există aparținători. Adaugă mai întâi un aparținător.
             </div>
-            <p className="text-sm text-gray-500 mb-4 leading-relaxed">
-              Un baston nou va fi creat automat și atribuit aparținătorului selectat.
-            </p>
-            {buError && <div className="mb-3 px-3 py-2 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">{buError}</div>}
-
-            {caregivers.length === 0 ? (
-              <div className="py-6 text-center text-gray-500 text-sm">
-                Nu există aparținători înregistrați. Adaugă mai întâi un aparținător.
+          ) : (
+            <form onSubmit={handleCreateBlindUser} className="flex flex-col gap-4">
+              <Input type="email" label="Email" value={buEmail} onChange={(e) => setBuEmail(e.target.value)} placeholder="orb@email.com" required autoFocus />
+              <Input type="password" label="Parolă" value={buPassword} onChange={(e) => setBuPassword(e.target.value)} placeholder="min. 6 caractere" required />
+              <Input type="text" label="Nume baston" value={buCaneName} onChange={(e) => setBuCaneName(e.target.value)} placeholder="ex: Baston Ion" required />
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Aparținător responsabil</label>
+                <select
+                  className="w-full px-4 py-2.5 bg-surface-200 border border-white/[0.06] rounded-xl text-sm text-slate-100 outline-none transition-all focus:border-accent-500/50 focus:ring-2 focus:ring-accent-500/20 cursor-pointer"
+                  value={buCaregiverId}
+                  onChange={(e) => setBuCaregiverId(e.target.value)}
+                  required
+                >
+                  {caregivers.map((c) => (
+                    <option key={c.id} value={c.id}>{c.email}</option>
+                  ))}
+                </select>
               </div>
-            ) : (
-              <form onSubmit={handleCreateBlindUser} className="flex flex-col gap-3">
-                <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
-                  Email utilizator nevăzător
-                  <input type="email" className="px-3 py-2 border border-gray-200 rounded-lg outline-none focus:border-blue-500 text-sm" value={buEmail} onChange={(e) => setBuEmail(e.target.value)} placeholder="orb@email.com" required autoFocus />
-                </label>
-                <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
-                  Parolă
-                  <input type="password" className="px-3 py-2 border border-gray-200 rounded-lg outline-none focus:border-blue-500 text-sm" value={buPassword} onChange={(e) => setBuPassword(e.target.value)} placeholder="min. 6 caractere" required />
-                </label>
-                <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
-                  Nume baston
-                  <input type="text" className="px-3 py-2 border border-gray-200 rounded-lg outline-none focus:border-blue-500 text-sm" value={buCaneName} onChange={(e) => setBuCaneName(e.target.value)} placeholder="ex: Baston Ion" required />
-                </label>
-                <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
-                  Aparținător responsabil
-                  <select
-                    className="px-3 py-2 border border-gray-200 rounded-lg outline-none focus:border-blue-500 text-sm bg-white"
-                    value={buCaregiverId}
-                    onChange={(e) => setBuCaregiverId(e.target.value)}
-                    required
-                  >
-                    {caregivers.map((c) => (
-                      <option key={c.id} value={c.id}>{c.email}</option>
-                    ))}
-                  </select>
-                </label>
-                <div className="flex items-center gap-2 py-2 px-3 bg-amber-50 rounded-lg text-xs text-amber-700">
-                  🦯 Bastonul „{buCaneName || "Baston"}" va fi adăugat automat în contul aparținătorului selectat.
-                </div>
-                <button type="submit" disabled={buLoading} className="py-2.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white font-semibold rounded-lg text-sm transition-colors mt-1">
-                  {buLoading ? "Se creează…" : "Creează cont + baston"}
-                </button>
-              </form>
-            )}
-          </div>
-        </div>
+              <div className="flex items-center gap-2.5 py-3 px-4 bg-warning-500/8 border border-warning-500/15 rounded-xl text-xs text-warning-400">
+                <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <path d="M12 2v20M8 6l4-4 4 4" />
+                </svg>
+                Bastonul &quot;{buCaneName || "Baston"}&quot; va fi creat automat.
+              </div>
+              <Button type="submit" disabled={buLoading} size="lg" className="w-full mt-1">
+                {buLoading ? <><Spinner size="sm" /> Se creează...</> : "Creează cont + baston"}
+              </Button>
+            </form>
+          )}
+        </Modal>
       )}
     </div>
   );

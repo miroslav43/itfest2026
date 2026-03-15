@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { api, ApiError } from "@/lib/api";
+import { Button, Input, Card, Logo, Badge, Spinner } from "@/components/ui";
 import type { Cane, Location } from "@/types";
 
 function randomWalk(lat: number, lng: number, stepM = 8): { lat: number; lng: number } {
@@ -36,42 +37,28 @@ export default function SimulatorPage() {
     if (!selectedId) return setStatus("Selectează un baston mai întâi.");
     try {
       const result = await api.post<Location>(`/locations/${selectedId}/update`, {
-        latitude: la,
-        longitude: lo,
-        accuracy: parseFloat(acc) || null,
-        source: "simulator",
+        latitude: la, longitude: lo, accuracy: parseFloat(acc) || null, source: "simulator",
       });
-      setStatus(
-        `✅ Trimis: ${result.latitude.toFixed(6)}, ${result.longitude.toFixed(6)} — ${new Date(result.recorded_at).toLocaleTimeString("ro-RO")}`
-      );
+      setStatus(`Trimis: ${result.latitude.toFixed(6)}, ${result.longitude.toFixed(6)} — ${new Date(result.recorded_at).toLocaleTimeString("ro-RO")}`);
     } catch (err) {
-      setStatus(`❌ ${err instanceof ApiError ? err.detail : "Eroare necunoscută."}`);
+      setStatus(err instanceof ApiError ? err.detail : "Eroare necunoscută.");
     }
   }
 
-  function handleManual() {
-    sendLocation(parseFloat(lat), parseFloat(lng), accuracy);
-  }
+  function handleManual() { sendLocation(parseFloat(lat), parseFloat(lng), accuracy); }
 
   function useMyLocation() {
-    if (!navigator.geolocation) {
-      setStatus("❌ Browserul tău nu suportă geolocation.");
-      return;
-    }
-    setStatus("📡 Se obține locația GPS...");
+    if (!navigator.geolocation) { setStatus("Browserul nu suportă geolocation."); return; }
+    setStatus("Se obține locația GPS...");
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const la = pos.coords.latitude;
         const lo = pos.coords.longitude;
         const acc = pos.coords.accuracy?.toFixed(1) ?? "5";
-        setLat(la.toFixed(7));
-        setLng(lo.toFixed(7));
-        setAccuracy(acc);
+        setLat(la.toFixed(7)); setLng(lo.toFixed(7)); setAccuracy(acc);
         sendLocation(la, lo, acc);
       },
-      (err) => {
-        setStatus(`❌ Nu s-a putut obține locația: ${err.message}`);
-      },
+      (err) => setStatus(`Nu s-a putut obține locația: ${err.message}`),
       { enableHighAccuracy: true, timeout: 10000 }
     );
   }
@@ -83,8 +70,7 @@ export default function SimulatorPage() {
     intervalRef.current = setInterval(() => {
       const next = randomWalk(posRef.current.lat, posRef.current.lng);
       posRef.current = next;
-      setLat(next.lat.toFixed(7));
-      setLng(next.lng.toFixed(7));
+      setLat(next.lat.toFixed(7)); setLng(next.lng.toFixed(7));
       sendLocation(next.lat, next.lng, accuracy);
     }, 3000);
   }
@@ -93,157 +79,115 @@ export default function SimulatorPage() {
     clearInterval(intervalRef.current!);
     intervalRef.current = null;
     setAutoRunning(false);
-    setStatus("Simulare oprită. Se șterge locația de pe hartă…");
-
+    setStatus("Simulare oprită...");
     if (selectedId) {
       try {
         await api.delete(`/locations/${selectedId}/clear`);
-        setStatus("⏹ Simulare oprită — pinul a fost șters de pe hartă.");
-      } catch {
-        setStatus("⏹ Simulare oprită. (locația veche rămâne până la următorul update)");
-      }
+        setStatus("Simulare oprită — pinul a fost șters de pe hartă.");
+      } catch { setStatus("Simulare oprită."); }
     }
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-10">
-
-      {/* ── Sticky banner când simularea e activă ── */}
+    <div className="min-h-screen bg-surface-0 pb-10">
+      {/* Live banner */}
       {autoRunning && (
-        <div className="sticky top-0 z-50 bg-red-500 text-white px-4 py-3 flex items-center justify-between shadow-md">
+        <div className="sticky top-0 z-50 bg-danger-500 text-white px-6 py-3.5 flex items-center justify-between shadow-lg">
           <div className="flex items-center gap-3">
-            <span className="relative flex h-3 w-3">
+            <span className="relative flex h-2.5 w-2.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
-              <span className="relative inline-flex h-3 w-3 rounded-full bg-white" />
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-white" />
             </span>
-            <span className="font-semibold text-sm">
-              Simulare activă — se trimite locație la fiecare 3s
-            </span>
+            <span className="font-semibold text-sm">Simulare activă — locație trimisă la fiecare 3s</span>
           </div>
-          <button
-            onClick={stopAuto}
-            className="bg-white text-red-600 font-bold px-4 py-1.5 rounded-lg text-sm hover:bg-red-50 transition-colors"
-          >
-            ⏹ Oprește
-          </button>
+          <Button size="sm" variant="ghost" onClick={stopAuto} className="!text-white !hover:bg-white/20">
+            Oprește
+          </Button>
         </div>
       )}
 
-      <div className="max-w-lg mx-auto px-4 pt-8">
-        <Link href="/" className="inline-block text-sm text-blue-600 hover:underline mb-4">
-          ← Înapoi la hartă
+      <div className="max-w-lg mx-auto px-6 pt-8">
+        <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-accent-400 transition-colors mb-6">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M10 4L6 8l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          Înapoi la hartă
         </Link>
-        <h1 className="text-2xl font-bold text-gray-900 mb-1">🛠 Simulator locație</h1>
-        <p className="text-gray-500 text-sm mb-6 leading-relaxed">
-          Simulează datele GPS care vor fi trimise de telefonul/bastonul real în backend.
-          Schema API rămâne identică când se înlocuiește cu dispozitivul real.
+
+        <div className="flex items-center gap-3 mb-2">
+          <Logo size="sm" />
+          <div className="h-5 w-px bg-white/[0.08]" />
+          <h1 className="text-xl font-bold text-slate-100">Simulator GPS</h1>
+          {autoRunning && <Badge variant="danger">LIVE</Badge>}
+        </div>
+        <p className="text-slate-500 text-sm mb-8 leading-relaxed">
+          Simulează datele GPS trimise de hardware. API-ul rămâne identic la integrarea cu dispozitivul real.
         </p>
 
-        <div className="bg-white rounded-2xl shadow-sm p-6 flex flex-col gap-4 mb-4">
+        <Card className="p-6 flex flex-col gap-5 mb-5">
           {/* Cane selector */}
-          <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
-            Baston țintă
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Baston țintă</label>
             <select
-              className="px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-blue-500 bg-white"
+              className="w-full px-4 py-2.5 bg-surface-200 border border-white/[0.06] rounded-xl text-sm text-slate-100 outline-none transition-all focus:border-accent-500/50 focus:ring-2 focus:ring-accent-500/20 cursor-pointer"
               value={selectedId}
               onChange={(e) => setSelectedId(e.target.value)}
             >
-              {canes.length === 0 && (
-                <option value="">Niciun baston — adaugă din pagina principală</option>
-              )}
+              {canes.length === 0 && <option value="">Niciun baston disponibil</option>}
               {canes.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name} ({c.id})
-                </option>
+                <option key={c.id} value={c.id}>{c.name} ({c.id})</option>
               ))}
             </select>
-          </label>
+          </div>
 
           {/* Coordinates */}
           <div className="grid grid-cols-2 gap-3">
-            <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
-              Latitudine
-              <input
-                type="number"
-                step="any"
-                className="px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-blue-500"
-                value={lat}
-                onChange={(e) => setLat(e.target.value)}
-              />
-            </label>
-            <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
-              Longitudine
-              <input
-                type="number"
-                step="any"
-                className="px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-blue-500"
-                value={lng}
-                onChange={(e) => setLng(e.target.value)}
-              />
-            </label>
+            <Input label="Latitudine" type="number" step="any" value={lat} onChange={(e) => setLat(e.target.value)} />
+            <Input label="Longitudine" type="number" step="any" value={lng} onChange={(e) => setLng(e.target.value)} />
           </div>
 
-          {/* Accuracy */}
-          <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
-            Precizie GPS (metri)
-            <input
-              type="number"
-              className="px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-blue-500"
-              value={accuracy}
-              onChange={(e) => setAccuracy(e.target.value)}
-            />
-          </label>
+          <Input label="Precizie GPS (metri)" type="number" value={accuracy} onChange={(e) => setAccuracy(e.target.value)} />
 
-          {/* Current location */}
-          <button
-            onClick={useMyLocation}
-            disabled={autoRunning}
-            className="w-full py-2.5 bg-green-600 hover:bg-green-700 disabled:opacity-40 text-white font-semibold rounded-lg text-sm transition-colors flex items-center justify-center gap-2"
-          >
-            📍 Folosește locația mea actuală
-          </button>
+          {/* My location */}
+          <Button variant="success" size="lg" className="w-full" onClick={useMyLocation} disabled={autoRunning}>
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
+              <circle cx="12" cy="10" r="3" />
+            </svg>
+            Folosește locația mea actuală
+          </Button>
 
-          {/* Actions */}
-          <div className="flex gap-3 flex-wrap">
-            <button
-              onClick={handleManual}
-              disabled={autoRunning}
-              className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white font-semibold rounded-lg text-sm transition-colors min-w-32"
-            >
+          {/* Action buttons */}
+          <div className="grid grid-cols-2 gap-3">
+            <Button size="lg" onClick={handleManual} disabled={autoRunning}>
               Trimite manual
-            </button>
+            </Button>
             {autoRunning ? (
-              <button
-                onClick={stopAuto}
-                className="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white font-bold rounded-lg text-sm transition-colors min-w-32 flex items-center justify-center gap-2"
-              >
-                <span className="animate-pulse">⏹</span> Oprește simulare
-              </button>
+              <Button size="lg" variant="danger" onClick={stopAuto}>
+                <Spinner size="sm" /> Oprește
+              </Button>
             ) : (
-              <button
-                onClick={startAuto}
-                className="flex-1 py-2.5 bg-cyan-600 hover:bg-cyan-700 text-white font-semibold rounded-lg text-sm transition-colors min-w-32"
-              >
-                ▶ Simulare auto (3s)
-              </button>
+              <Button size="lg" variant="secondary" onClick={startAuto}>
+                Simulare auto (3s)
+              </Button>
             )}
           </div>
 
+          {/* Status */}
           {status && (
-            <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 font-mono">
+            <div className="px-4 py-3 bg-surface-200 border border-white/[0.06] rounded-xl text-sm text-slate-300 font-mono animate-fade-in">
               {status}
             </div>
           )}
-        </div>
+        </Card>
 
-        <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-sm text-blue-800 leading-relaxed">
-          <strong>Notă de integrare:</strong> Când bastonul sau telefonul real trimite
-          locația, va apela{" "}
-          <code className="bg-blue-100 px-1 rounded">
-            POST /locations/{"{cane_id}"}/update
-          </code>{" "}
-          cu același format JSON. Nicio modificare la front-end nu este necesară.
-        </div>
+        <Card className="p-5">
+          <p className="text-sm text-slate-400 leading-relaxed">
+            <strong className="text-slate-300">Integrare hardware:</strong> Dispozitivul real va apela{" "}
+            <code className="text-accent-400 bg-accent-500/10 px-1.5 py-0.5 rounded text-xs font-mono">
+              POST /locations/{"{cane_id}"}/update
+            </code>{" "}
+            cu același format JSON.
+          </p>
+        </Card>
       </div>
     </div>
   );

@@ -1,10 +1,17 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Solemtrix – Smart Cane Tracking",
   description:
     "Real-time smart cane tracking platform for caregivers and visually impaired users.",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: "#0a0a0f",
 };
 
 export default function RootLayout({

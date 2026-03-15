@@ -46,3 +46,19 @@ export interface Destination {
 export interface ApiError {
   detail: string;
 }
+
+// ─── Indoor 3D Map ───────────────────────────────────────────────────────────
+
+export type IndoorMarkerType = "start" | "end" | "waypoint" | "obstacle";
+
+export interface IndoorMarker {
+  id: string;
+  position: [number, number, number];
+  type: IndoorMarkerType;
+  label?: string;
+}
+
+export interface IndoorModel {
+  name: string;
+  url: string;
+}

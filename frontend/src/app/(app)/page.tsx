@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import { getRole } from "@/lib/auth";
+import { getRole, clearToken } from "@/lib/auth";
+import { useRouter } from "next/navigation";
 import type { Cane, Location } from "@/types";
 import CaneSidebar from "@/components/CaneSidebar";
 import LocationPanel from "@/components/LocationPanel";
@@ -26,6 +27,7 @@ const POLL_INTERVAL_MS = 3000;
 const STALE_MS = 5 * 60 * 1000;
 
 export default function TrackingPage() {
+  const router = useRouter();
   const [canes, setCanes] = useState<Cane[]>([]);
   const [activeCaneId, setActiveCaneId] = useState<string | null>(null);
   const [location, setLocation] = useState<Location | null>(null);
@@ -34,7 +36,16 @@ export default function TrackingPage() {
   const [showRegisterBlind, setShowRegisterBlind] = useState(false);
   const [showDestinations, setShowDestinations] = useState(false);
   const wasOnlineRef = useRef(false);
-  const role = getRole();
+  const [role, setRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    setRole(getRole());
+  }, []);
+
+  function handleLogout() {
+    clearToken();
+    router.push("/auth");
+  }
 
   const activeCane = canes.find((c) => c.id === activeCaneId) ?? null;
 
@@ -140,40 +151,56 @@ export default function TrackingPage() {
 
       <main className="flex-1 flex flex-col overflow-hidden">
         {/* Top nav */}
-        <header className="h-14 flex-shrink-0 bg-surface-50 border-b border-white/[0.06] flex items-center justify-between px-5">
+        <header className="h-14 flex-shrink-0 bg-surface-50 border-b border-white/[0.06] flex items-center justify-between px-3 md:px-5">
           <div className="flex items-center gap-3">
             <Logo size="sm" />
             {role === "admin" && <Badge variant="accent">Admin</Badge>}
           </div>
 
-          <nav className="flex items-center gap-1">
-            {role === "caregiver" && (
+          <nav className="flex items-center gap-0.5 md:gap-1 overflow-x-auto">
+            {(role === "caregiver" || role === "admin") && (
               <button
                 onClick={() => setShowRegisterBlind(true)}
-                className="px-3 py-1.5 text-xs font-medium text-slate-400 hover:text-slate-100 hover:bg-white/[0.06] rounded-lg transition-colors"
+                className="px-2 md:px-3 py-1.5 text-xs font-medium text-slate-400 hover:text-slate-100 hover:bg-white/[0.06] rounded-lg transition-colors whitespace-nowrap"
               >
-                + Nevăzător
+                <span className="hidden sm:inline">+ Nevăzător</span>
+                <span className="sm:hidden">+</span>
               </button>
             )}
             {(role === "caregiver" || role === "admin") && canes.length > 0 && (
               <button
                 onClick={() => setShowDestinations(true)}
-                className="px-3 py-1.5 text-xs font-medium text-slate-400 hover:text-slate-100 hover:bg-white/[0.06] rounded-lg transition-colors"
+                className="px-2 md:px-3 py-1.5 text-xs font-medium text-slate-400 hover:text-slate-100 hover:bg-white/[0.06] rounded-lg transition-colors whitespace-nowrap hidden sm:block"
               >
                 Destinații
               </button>
             )}
             {role === "admin" && (
-              <Link href="/admin" className="px-3 py-1.5 text-xs font-medium text-slate-400 hover:text-slate-100 hover:bg-white/[0.06] rounded-lg transition-colors">
+              <Link href="/admin" className="px-2 md:px-3 py-1.5 text-xs font-medium text-slate-400 hover:text-slate-100 hover:bg-white/[0.06] rounded-lg transition-colors whitespace-nowrap">
                 Admin
               </Link>
             )}
-            <Link href="/simulator" className="px-3 py-1.5 text-xs font-medium text-slate-400 hover:text-slate-100 hover:bg-white/[0.06] rounded-lg transition-colors">
+            <Link href="/indoor-map" className="px-2 md:px-3 py-1.5 text-xs font-medium text-slate-400 hover:text-slate-100 hover:bg-white/[0.06] rounded-lg transition-colors whitespace-nowrap">
+              <span className="hidden sm:inline">Indoor 3D</span>
+              <span className="sm:hidden">3D</span>
+            </Link>
+            <Link href="/simulator" className="px-2 md:px-3 py-1.5 text-xs font-medium text-slate-400 hover:text-slate-100 hover:bg-white/[0.06] rounded-lg transition-colors whitespace-nowrap hidden sm:block">
               Simulator
             </Link>
-            <Link href="/settings" className="px-3 py-1.5 text-xs font-medium text-slate-400 hover:text-slate-100 hover:bg-white/[0.06] rounded-lg transition-colors">
+            <Link href="/settings" className="px-2 md:px-3 py-1.5 text-xs font-medium text-slate-400 hover:text-slate-100 hover:bg-white/[0.06] rounded-lg transition-colors whitespace-nowrap hidden sm:block">
               Setări
             </Link>
+            <div className="w-px h-5 bg-white/[0.06] mx-1 hidden sm:block" />
+            <button
+              onClick={handleLogout}
+              className="px-2 md:px-3 py-1.5 text-xs font-medium text-danger-400 hover:text-danger-300 hover:bg-danger-500/10 rounded-lg transition-colors whitespace-nowrap"
+              title="Deconectare"
+            >
+              <svg className="w-4 h-4 sm:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
+              </svg>
+              <span className="hidden sm:inline">Ieșire</span>
+            </button>
           </nav>
         </header>
 

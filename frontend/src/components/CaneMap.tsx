@@ -9,27 +9,12 @@ const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "";
 const DEFAULT_CENTER = { lat: 44.4268, lng: 26.1025 };
 const LIBRARIES: ("places")[] = ["places"];
 
-const DARK_MAP_STYLES: google.maps.MapTypeStyle[] = [
-  { elementType: "geometry", stylers: [{ color: "#1a1a2e" }] },
-  { elementType: "labels.text.stroke", stylers: [{ color: "#1a1a2e" }] },
-  { elementType: "labels.text.fill", stylers: [{ color: "#64748b" }] },
-  { featureType: "administrative", elementType: "geometry.stroke", stylers: [{ color: "#2e3247" }] },
-  { featureType: "road", elementType: "geometry", stylers: [{ color: "#252838" }] },
-  { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#64748b" }] },
-  { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#2e3247" }] },
-  { featureType: "water", elementType: "geometry", stylers: [{ color: "#0f1117" }] },
-  { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#3e4451" }] },
-  { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] },
-  { featureType: "transit", elementType: "labels", stylers: [{ visibility: "off" }] },
-];
-
 const MAP_OPTIONS: google.maps.MapOptions = {
   disableDefaultUI: false,
   zoomControl: true,
   mapTypeControl: false,
   streetViewControl: false,
   fullscreenControl: true,
-  styles: DARK_MAP_STYLES,
 };
 
 interface Props {

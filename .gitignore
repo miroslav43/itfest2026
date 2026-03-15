@@ -9,9 +9,9 @@ backend/.env.*
 !backend/.env.example
 
 # ─── Image Detection (Camera System) ──────────────────────────────────────────
-imageDetection/.env
-imageDetection/.env.*
-!imageDetection/.env.example
+BackendEsp/imageDetection/.env
+BackendEsp/imageDetection/.env.*
+!BackendEsp/imageDetection/.env.example
 imageDetection/__pycache__/
 imageDetection/**/__pycache__/
 imageDetection/*.pyc

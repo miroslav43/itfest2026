@@ -22,7 +22,13 @@ export default function AuthPage() {
     if (isAuthenticated()) { router.replace("/"); return; }
     api.get<{ count: number }>("/auth/user-count")
       .then(({ count }) => setCanSignup(count === 0))
-      .catch(() => setCanSignup(false))
+      .catch(() => {
+        setCanSignup(false);
+        setError(
+          `Nu s-a putut conecta la server (${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}). ` +
+          "Verifică că backend-ul rulează."
+        );
+      })
       .finally(() => setCheckingCount(false));
   }, [router]);
 
@@ -44,7 +50,11 @@ export default function AuthPage() {
       else router.push("/");
     } catch (err) {
       if (err instanceof ApiError) setError(err.detail);
-      else if (err instanceof TypeError) setError("Nu s-a putut conecta la server.");
+      else if (err instanceof TypeError)
+        setError(
+          `Nu s-a putut conecta la server (${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}). ` +
+          "Verifică că backend-ul rulează."
+        );
       else setError(String(err));
     } finally {
       setLoading(false);

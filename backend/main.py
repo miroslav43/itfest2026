@@ -14,14 +14,30 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    db_url = os.getenv("DATABASE_URL", "")
+    if not db_url or "user:password@host" in db_url or db_url == "":
+        logger.error(
+            "❌ DATABASE_URL nu e configurata in backend/.env!\n"
+            "   Mergi la https://console.neon.tech → proiectul tau → Connection Details\n"
+            "   Copiaza Connection string si pune-l in backend/.env"
+        )
+        # Porneste serverul fara DB — rutele care cer DB vor returna 503
+        yield
+        return
+
     try:
         from database import engine, Base
         import models  # noqa: F401
         Base.metadata.create_all(bind=engine)
         logger.info("✅ Conexiune Neon OK – tabele verificate.")
     except Exception as e:
-        logger.error(f"❌ Eroare conectare baza de date: {e}")
-        raise
+        logger.error(
+            f"❌ Eroare conectare baza de date: {e}\n"
+            "   Verifica DATABASE_URL in backend/.env"
+        )
+        # Nu crapa la startup — porneste serverul oricum, DB va da eroare pe cereri
+        yield
+        return
     yield
 
 
@@ -54,4 +70,11 @@ app.include_router(tts.router, prefix="/tts", tags=["TTS"])
 
 @app.get("/", tags=["Health"])
 def root():
-    return {"status": "ok", "app": "Solemtrix API", "version": "0.2.0"}
+    db_url = os.getenv("DATABASE_URL", "")
+    db_ok = bool(db_url) and "user:password@host" not in db_url
+    return {
+        "status": "ok",
+        "app": "Solemtrix API",
+        "version": "0.2.0",
+        "database": "configured" if db_ok else "NOT CONFIGURED — editeaza backend/.env",
+    }

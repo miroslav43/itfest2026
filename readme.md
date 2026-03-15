@@ -1,283 +1,280 @@
-# Solemtrix — Next.js + FastAPI + Neon
+# Itfest 2026 — ESP32 Unified System
 
-**Aplicație MVP pentru îngrijitori – urmărire în timp real a bastonului inteligent.**
-
----
-
-## Arhitectură
-
-```
-┌─────────────────────────────────────────────────────────┐
-│  Browser (Caregiver)                                    │
-│  Next.js 15 · TypeScript · Tailwind CSS                 │
-│  Polling la fiecare 3s → GET /locations/{id}/latest     │
-└───────────────────┬─────────────────────────────────────┘
-                    │ HTTP / REST (JSON)
-┌───────────────────▼─────────────────────────────────────┐
-│  FastAPI (Python 3.11+)                                 │
-│  JWT Auth · SQLAlchemy · Uvicorn                        │
-└───────────────────┬─────────────────────────────────────┘
-                    │ SQLAlchemy / psycopg2
-┌───────────────────▼─────────────────────────────────────┐
-│  Neon Postgres (PostgreSQL 16)                          │
-│  users · canes · cane_access                           │
-│  latest_locations · location_history                   │
-└─────────────────────────────────────────────────────────┘
-```
-
-**Flux locație (MVP – simulat):**
-Telefonul / Simulatorul → `POST /locations/{caneId}/update` → Neon → Front-end polling
-
-**Flux locație (producție viitoare):**
-Baston real / Aplicație mobilă → același endpoint → același front-end, zero modificări
+Sistem de asistență bazat pe ESP32 + ESP32-CAM + FastAPI pe Mac.
+Recunoaștere facială, feedback haptic pentru obstacole, TTS în română prin ElevenLabs, OCR, YOLO și descriere scenă GPT-4o-mini.
 
 ---
 
-## Structura proiectului
+## Hardware
+
+| Componentă | IP | Port |
+|---|---|---|
+| ESP32 (senzori + motoare + BT) | `10.210.85.244` | 80 |
+| ESP32-CAM (cameră) | `10.210.85.207` | 80 |
+| FastAPI Mac backend | `localhost` | 8000 |
+
+### Pinout ESP32 — senzori distanță HC-SR04
+
+| Senzor | Direcție | TRIG | ECHO | Motor haptic |
+|---|---|---|---|---|
+| Sensor 1 | Față | GPIO 16 | GPIO 17 | MOSFET 1 (GPIO 12) |
+| Sensor 2 | Stânga | GPIO 4 | GPIO 2 | MOSFET 2 (GPIO 13) |
+| Sensor 3 | Dreapta | GPIO 14 | GPIO 5 | MOSFET 3 (GPIO 22) |
+| — | Critic (toți < 30 cm) | — | — | MOSFET 4 (GPIO 23) |
+
+### Alți senzori ESP32
+
+| Senzor | Pin |
+|---|---|
+| DHT11 (temp/umiditate) | GPIO 18 |
+| MQ135 (calitate aer) | GPIO 33 |
+| LDR (lumină) | GPIO 34 |
+| AHT20 (I²C) | SDA GPIO 19, SCL GPIO 21 |
+| BMP280 (I²C) | SDA GPIO 19, SCL GPIO 21 |
+
+### ESP32-CAM
+
+| Componentă | Detaliu |
+|---|---|
+| Model | AI Thinker ESP32-CAM |
+| Flash LED | GPIO 4 |
+| Stream format | MJPEG multipart, port 80 |
+
+---
+
+## Structura proiect
 
 ```
-solemtrix-next/
-├── backend/
-│   ├── main.py                 # FastAPI app + CORS + routers
-│   ├── database.py             # SQLAlchemy engine + session
-│   ├── models.py               # ORM models (User, Cane, CaneAccess, LatestLocation, LocationHistory)
-│   ├── schemas.py              # Pydantic schemas
-│   ├── auth.py                 # JWT helpers + password hashing
-│   ├── routers/
-│   │   ├── auth.py             # POST /auth/signup, POST /auth/login
-│   │   ├── users.py            # GET /users/me
-│   │   ├── canes.py            # GET/POST/DELETE /canes/
-│   │   └── locations.py        # GET/POST /locations/{id}/latest|update|history
-│   ├── requirements.txt
-│   └── .env.example
-├── database/
-│   └── init.sql                # Schema Neon Postgres (rulează o singură dată)
-├── frontend/
-│   ├── src/
-│   │   ├── app/
-│   │   │   ├── layout.tsx              # Root layout (HTML lang="ro")
-│   │   │   ├── globals.css             # Tailwind directives
-│   │   │   ├── (auth)/auth/page.tsx    # Login + Signup
-│   │   │   └── (app)/
-│   │   │       ├── layout.tsx          # Auth guard (redirect dacă nu e autentificat)
-│   │   │       ├── page.tsx            # Pagina principală cu hartă live
-│   │   │       ├── settings/page.tsx   # Setări cont
-│   │   │       └── simulator/page.tsx  # Debug GPS sender
-│   │   ├── components/
-│   │   │   ├── OnboardingModal.tsx     # 4 pași onboarding în română
-│   │   │   ├── EnrollmentModal.tsx     # Înrolare baston (cod manual)
-│   │   │   ├── CaneSidebar.tsx         # Lista bastoane + buton +
-│   │   │   ├── CaneMap.tsx             # Google Map cu marker (client-only)
-│   │   │   └── LocationPanel.tsx       # Overlay coordonate / status / timestamp
-│   │   ├── lib/
-│   │   │   ├── api.ts                  # Fetch wrapper cu Bearer token
-│   │   │   └── auth.ts                 # JWT în localStorage
-│   │   └── types/index.ts              # TypeScript interfaces
-│   ├── package.json
-│   ├── tailwind.config.ts
-│   ├── next.config.ts
-│   └── .env.local.example
-└── README.md
+BackendEsp/
+├── codEsp.c                  Firmware ESP32 (senzori + motoare + BT)
+├── codCamera.c               Firmware ESP32-CAM
+├── find_devices.sh           Script descoperire IP-uri în rețea
+└── imageDetection/
+    ├── main.py               Entry point FastAPI + camera loop
+    ├── config.py             Toate setările (citite din .env)
+    ├── state.py              AppState partajat între thread-uri
+    ├── face_engine.py        InsightFace — încărcare model + recunoaștere
+    ├── face_loop.py          Bucla principală OpenCV (rulează pe main thread)
+    ├── camera_thread.py      ThreadedCamera — citire MJPEG non-blocking
+    ├── haptic.py             Polling distanță → control motoare
+    ├── tts.py                ElevenLabs TTS + cache MP3 + afplay
+    ├── notify.py             Notificări macOS (osascript)
+    ├── ocr_engine.py         EasyOCR lazy-load
+    ├── yolo_engine.py        YOLOv8 lazy-load
+    ├── gpt_engine.py         GPT-4o-mini (scenă + sumarizare OCR)
+    ├── esp_client.py         Client HTTP pentru ESP32
+    ├── cam_client.py         Client HTTP pentru ESP32-CAM
+    ├── find_devices.py       Scanner rețea pentru descoperire IP-uri
+    ├── routers/
+    │   ├── esp.py            Rute FastAPI /esp/* → proxy ESP32
+    │   ├── cam.py            Rute FastAPI /cam/* → proxy ESP32-CAM
+    │   └── control.py        Rute control: /ocr /detect /describe /tts /haptic
+    ├── known_faces/          Imagini persoane cunoscute (1 poză/persoană)
+    ├── tts_cache/            MP3-uri generate de ElevenLabs (cache local)
+    ├── .env                  Secrets + IP-uri (nu se commitează)
+    └── requirements.txt
 ```
 
 ---
 
-## Cerințe preliminare
-
-- **Node.js 18+** și **npm 9+**
-- **Python 3.11+** și **pip**
-- Cont **[Neon](https://neon.tech/)** (tier gratuit este suficient)
-- Cont **Google Cloud** cu **Maps JavaScript API** activat
-
----
-
-## 1. Baza de date – Neon Postgres
-
-1. Creează un proiect nou pe [neon.tech](https://neon.tech/).
-2. Din **Dashboard → Connection details**, copiază connection string-ul
-   (formatul: `postgresql://user:pass@host/dbname?sslmode=require`).
-3. În interfața SQL Neon (sau orice client Postgres), rulează fișierul:
+## Instalare
 
 ```bash
-# Cu psql local:
-psql "postgresql://user:pass@host/dbname?sslmode=require" -f database/init.sql
+# Creare mediu conda izolat
+conda create -n itfest python=3.11 -y
+conda activate itfest
 
-# Sau copiază conținutul fișierului direct în editorul SQL Neon
-```
-
----
-
-## 2. Backend – FastAPI
-
-```bash
-cd backend
-
-# Creează mediu virtual
-python -m venv venv
-# Windows:
-venv\Scripts\activate
-# Linux/macOS:
-source venv/bin/activate
-
-# Instalează dependențe
+cd BackendEsp/imageDetection
 pip install -r requirements.txt
-
-# Configurează variabilele de mediu
-copy .env.example .env   # Windows
-# cp .env.example .env   # Linux/macOS
 ```
 
-Editează `backend/.env`:
+---
+
+## Configurare `.env`
+
+Fișier: `BackendEsp/imageDetection/.env`
 
 ```env
-DATABASE_URL=postgresql://user:password@host/dbname?sslmode=require
-SECRET_KEY=un_sir_lung_aleatoriu_de_minim_32_caractere
-ALLOWED_ORIGINS=http://localhost:3000
+# IP-uri hardware
+ESP_IP=10.210.85.244
+CAM_IP=10.210.85.207
+
+# API Keys
+CHATGPT_API_KEY=sk-...
+ELEVENLABS_API_KEY=sk_...
+
+# Voce ElevenLabs (default: Ana Maria — română)
+# ELEVENLABS_VOICE_ID=urzoE6aZYmSRdFQ6215h
+
+# Prag obstacol haptic (cm)
+OBSTACLE_THRESHOLD_CM=50
+CRITICAL_THRESHOLD_CM=30
+
+# Recunoaștere facială
+FACE_THRESHOLD=0.4
+FACE_COOLDOWN=30
+
+# Server
+API_PORT=8000
 ```
 
-Pornește serverul:
+---
+
+## Pornire
 
 ```bash
-uvicorn main:app --reload --port 8000
+conda activate itfest
+cd BackendEsp/imageDetection
+python main.py
 ```
 
-Documentație API automată: [http://localhost:8000/docs](http://localhost:8000/docs)
+- API docs: http://localhost:8000/docs
+- Status:   http://localhost:8000/status
+- Dashboard ESP32: http://10.210.85.244/
+- Stream cameră:   http://10.210.85.207/stream
 
 ---
 
-## 3. Frontend – Next.js
+## Descoperire IP-uri automat
+
+Dacă IP-urile s-au schimbat (rețea nouă):
 
 ```bash
-cd frontend
+# Scanează rețeaua și afișează IP-urile găsite
+./BackendEsp/find_devices.sh
 
-# Instalează dependențe
-npm install
+# Sau actualizează automat .env
+./BackendEsp/find_devices.sh --update-env
 
-# Configurează variabilele de mediu
-copy .env.local.example .env.local   # Windows
-# cp .env.local.example .env.local   # Linux/macOS
-```
-
-Editează `frontend/.env.local`:
-
-```env
-NEXT_PUBLIC_API_URL=http://localhost:8000
-NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=cheia_ta_google_maps
-```
-
-> **Google Maps API key:** [Google Cloud Console](https://console.cloud.google.com/) →
-> Activează **Maps JavaScript API** → Credentials → Create API key.
-
-Pornește aplicația:
-
-```bash
-npm run dev
-```
-
-Deschide [http://localhost:3000](http://localhost:3000).
-
----
-
-## 4. Flux de utilizare
-
-### Prima utilizare
-1. Accesează [http://localhost:3000/auth](http://localhost:3000/auth).
-2. Creează un cont nou.
-3. Se afișează onboarding-ul în română (4 pași).
-
-### Adaugă un baston
-1. Pe pagina principală, apasă **+** din sidebar.
-2. Introdu un cod baston (ex: `cane_demo_001`) sau generează unul automat.
-3. Dă un nume opțional → **Asociază baston**.
-
-### Simulează locația
-1. Mergi la [http://localhost:3000/simulator](http://localhost:3000/simulator).
-2. Selectează bastonul.
-3. Introdu coordonate (ex: București: 44.4268, 26.1025).
-4. **Trimite manual** sau pornește **Simulare auto** (trimite la fiecare 3 secunde).
-5. Pe pagina principală, harta se actualizează automat (polling 3s).
-
----
-
-## 5. Endpoint-uri API
-
-| Metodă | Endpoint | Descriere |
-|--------|----------|-----------|
-| POST | `/auth/signup` | Înregistrare cont nou |
-| POST | `/auth/login` | Autentificare, returnează JWT |
-| GET | `/users/me` | Profil utilizator curent |
-| GET | `/canes/` | Lista bastoane asociate |
-| POST | `/canes/enroll` | Înrolează un baston nou |
-| DELETE | `/canes/{id}` | Dezasociază baston |
-| GET | `/locations/{id}/latest` | Ultima locație a unui baston |
-| POST | `/locations/{id}/update` | Actualizează locația (simulator / device) |
-| GET | `/locations/{id}/history` | Istoric traseu (pregătit pentru viitor) |
-
-**Toate endpoint-urile (excepție: `/auth/*`) necesită header:**
-```
-Authorization: Bearer <jwt_token>
+# Cu subnet explicit
+./BackendEsp/find_devices.sh 10.210.85 --update-env
 ```
 
 ---
 
-## 6. Schema Neon Postgres
+## Rute API FastAPI (port 8000)
 
-```sql
-users           – id (UUID) · email · hashed_password · created_at
-canes           – id (TEXT, = codul QR) · name · created_at
-cane_access     – id · caregiver_id → users · cane_id → canes · linked_at
-                  UNIQUE(caregiver_id, cane_id)
-latest_locations – cane_id (PK) → canes · latitude · longitude · accuracy · recorded_at · source
-location_history – id · cane_id → canes · latitude · longitude · accuracy · recorded_at · source
-                   INDEX(cane_id, recorded_at DESC)
-```
+### Control general
 
-**Relație many-to-many:** un îngrijitor → multe bastoane, un baston → mulți îngrijitori.
+| Metodă | Rută | Descriere |
+|---|---|---|
+| GET | `/status` | Status complet sistem |
+| GET | `/help` | Lista tuturor rutelor |
+| POST | `/ocr` | Activare/dezactivare burst OCR (10s) |
+| POST | `/detect` | Activare/dezactivare YOLO |
+| POST | `/describe` | Declanșare descriere scenă GPT-4o-mini |
+| POST | `/tts` | TTS cu text arbitrar `{"text": "..."}` |
+| DELETE | `/tts/cache` | Șterge cache MP3 ElevenLabs |
+| POST | `/haptic/enable` | Activare monitor haptic |
+| POST | `/haptic/disable` | Dezactivare monitor haptic |
+| POST | `/haptic/threshold` | Setare prag distanță `{"cm": 50}` |
+
+### Proxy ESP32 (`/esp/*`)
+
+| Rută | Răspuns | Descriere |
+|---|---|---|
+| `/esp/json` | JSON | Tot: WiFi + BT + mosfete + senzori |
+| `/esp/sensors` | JSON | Toți senzorii (DHT11, MQ135, AHT20, BMP280, distanțe, lumină) |
+| `/esp/distance` | JSON `{sensor1_cm, sensor2_cm, sensor3_cm}` | Cele 3 distanțe |
+| `/esp/distance1` | text | Distanță senzor față |
+| `/esp/distance2` | text | Distanță senzor stânga |
+| `/esp/distance3` | text | Distanță senzor dreapta |
+| `/esp/light` | text | LDR |
+| `/esp/air` | text | MQ135 |
+| `/esp/status` | text | Status general |
+| `/esp/m{1-4}/on` | JSON | Pornire motor haptic |
+| `/esp/m{1-4}/off` | JSON | Oprire motor haptic |
+| `/esp/m{1-4}/toggle` | JSON | Toggle motor haptic |
+| `/esp/all/on` | JSON | Toate motoarele ON |
+| `/esp/all/off` | JSON | Toate motoarele OFF |
+| `/esp/bt/start` | JSON | Pornire Bluetooth A2DP |
+| `/esp/bt/stop` | JSON | Oprire Bluetooth |
+| `/esp/bt/status` | text | Status Bluetooth |
+| `/esp/restart` | text | Restart ESP32 |
+
+### Proxy ESP32-CAM (`/cam/*`)
+
+| Rută | Răspuns | Descriere |
+|---|---|---|
+| `/cam/stream` | MJPEG | Stream live (proxy) |
+| `/cam/capture` | JPEG | Captură cadru unic |
+| `/cam/flash/on` | text | Flash ON |
+| `/cam/flash/off` | text | Flash OFF |
+| `/cam/flash/toggle` | text | Flash toggle |
+| `/cam/flash/status` | text `ON`/`OFF` | Stare flash |
+| `/cam/json` | JSON `{device, ip, rssi, flash, free_heap, uptime}` | Status JSON |
+| `/cam/status` | text | Status text |
+| `/cam/restart` | text | Restart cameră |
 
 ---
 
-## 7. Online / Offline
+## Funcționalități principale
 
-Logica de stale detection este în `frontend/src/components/LocationPanel.tsx`:
+### Recunoaștere facială
+- Model: **InsightFace buffalo_l** (detection + recognition + genderage)
+- Adaugă imagini în `known_faces/` cu numele ca filename (ex: `Miroslav_Maletic.jpg`)
+- La detecție → TTS: *"Miroslav e în fața ta"* + notificare macOS
+- Cooldown 30s per persoană (configurabil)
 
-```ts
-const STALE_MS = 5 * 60 * 1000; // 5 minute
-const isOnline = location != null &&
-  Date.now() - new Date(location.recorded_at).getTime() < STALE_MS;
-```
+### Feedback haptic obstacole
+- Polling ESP `/distance` la **5 Hz**
+- Prag implicit **50 cm** → activează motorul direcțional
+- Prag critic **30 cm** (toate 3 senzori) → activează M4
+- Controlabil runtime via `/haptic/threshold`
 
-Ajustează `STALE_MS` după nevoie.
+### TTS ElevenLabs
+- Model: `eleven_flash_v2_5` (~75ms latență)
+- Voce: **Ana Maria** (română feminină, `urzoE6aZYmSRdFQ6215h`)
+- Cache local MP3 în `tts_cache/` — nu regenerează același text
+- Redare via `afplay` → iese pe device-ul audio implicit al Mac-ului
+- Pentru boxă BT: setează ESP32 BT Speaker ca output implicit în System Settings → Sound
+
+### OCR (EasyOCR)
+- Activare: tasta `O` în fereastra OpenCV sau `POST /ocr`
+- Burst 10s, captură la 2s interval
+- La final → sumarizare automată GPT-4o-mini
+
+### YOLO Object Detection
+- Activare: tasta `D` sau `POST /detect`
+- Model: YOLOv8n (lightweight)
+- Alert pentru clasele din `YOLO_ALERT_CLASSES` (default: `bus`)
+
+### GPT-4o-mini Scene Description
+- Activare: tasta `G` sau `POST /describe`
+- Trimite frame-ul curent la vision API
+- Afișează descrierea overlay în fereastra OpenCV 12s
+
+### Comenzi tastatură (fereastră OpenCV)
+
+| Tastă | Acțiune |
+|---|---|
+| `O` | Toggle OCR burst |
+| `D` | Toggle YOLO detection |
+| `G` | GPT scene describe |
+| `Q` | Ieșire |
 
 ---
 
-## 8. Înlocuire simulator cu dispozitiv real
+## TTS pe boxa Bluetooth
 
-Când bastonul sau telefonul real trimite GPS, va apela același endpoint:
-
-```
-POST /locations/{cane_id}/update
-Authorization: Bearer <jwt_token>
-Content-Type: application/json
-
-{
-  "latitude": 44.4268,
-  "longitude": 26.1025,
-  "accuracy": 5.0,
-  "source": "phone"
-}
-```
-
-**Zero modificări la frontend sau schema bazei de date.**
+1. Conectează ESP32 BT Speaker din **System Settings → Bluetooth**
+2. Setează-l ca output implicit în **System Settings → Sound → Output**
+3. `afplay` din `tts.py` va folosi automat outputul implicit
 
 ---
 
-## 9. Îmbunătățiri viitoare
+## Dependențe principale
 
-- **Traseu pe hartă** – activează scrierea în `location_history`, desenează `Polyline` pe `CaneMap.tsx`
-- **WebSocket / SSE** – înlocuiește polling-ul cu push real-time din FastAPI
-- **Notificări push** – alertă când bastonul intră offline > X minute
-- **QR generator** – pagină care generează și afișează QR SVG pentru un cod baston nou
-- **Aplicație mobilă** – React Native sau Flutter care trimite GPS continuu la backend
-- **PWA** – `next-pwa` pentru instalare pe telefon
-- **Autentificare avansată** – refresh tokens, OAuth (Google)
-- **Geofencing** – alertă la ieșire din zonă definită
+| Pachet | Versiune instalată | Rol |
+|---|---|---|
+| `insightface` | 0.7.3 | Recunoaștere facială |
+| `onnxruntime` | 1.24.3 | Inferență modele ONNX |
+| `opencv-python` | 4.13.0 | Captură video + display |
+| `fastapi` | 0.135.1 | API REST |
+| `uvicorn` | latest | Server ASGI |
+| `elevenlabs` | 2.39.0 | TTS |
+| `easyocr` | 1.7.2 | OCR |
+| `ultralytics` | 8.4.21 | YOLOv8 |
+| `openai` | 2.28.0 | GPT-4o-mini |
+| `httpx` | latest | Client HTTP async |
+| `python-dotenv` | latest | Citire .env |

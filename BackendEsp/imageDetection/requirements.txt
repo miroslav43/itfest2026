@@ -1,11 +1,11 @@
 insightface
-onnxruntime-gpu
+onnxruntime
 opencv-python
 numpy
 easyocr
 ultralytics
 fastapi
-uvicorn
+uvicorn[standard]
 openai
 httpx
 certifi

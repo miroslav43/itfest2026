@@ -2,28 +2,68 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { api } from "@/lib/api";
-import { clearToken } from "@/lib/auth";
+import { clearToken, getToken } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 import type { Cane, Location, Destination } from "@/types";
 
 const POLL_MS = 3000;
 const STALE_MS = 5 * 60 * 1000;
+const PENDING_TIMEOUT_MS = 15000;
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 
-function speak(text: string) {
-  if (typeof window === "undefined" || !window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
-  const utt = new SpeechSynthesisUtterance(text);
-  utt.lang = "ro-RO";
-  utt.rate = 0.95;
-  window.speechSynthesis.speak(utt);
+// ── Audio queue ───────────────────────────────────────────────────────────────
+let audioQueue: string[] = [];
+let isPlaying = false;
+
+async function playNext() {
+  if (isPlaying || audioQueue.length === 0) return;
+  const text = audioQueue.shift()!;
+  isPlaying = true;
+  try {
+    const token = getToken();
+    const res = await fetch(`${API_URL}/tts/speak`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ text }),
+    });
+    if (!res.ok) throw new Error("TTS error");
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    audio.onended = () => { URL.revokeObjectURL(url); isPlaying = false; playNext(); };
+    audio.onerror = () => { isPlaying = false; playNext(); };
+    audio.play();
+  } catch {
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      const utt = new SpeechSynthesisUtterance(text);
+      utt.lang = "ro-RO";
+      utt.rate = 0.95;
+      utt.onend = () => { isPlaying = false; playNext(); };
+      window.speechSynthesis.speak(utt);
+    } else {
+      isPlaying = false;
+      playNext();
+    }
+  }
 }
+
+function speak(text: string) { audioQueue.push(text); playNext(); }
+function speakNow(text: string) { audioQueue = [text]; isPlaying = false; playNext(); }
 
 function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString("ro-RO", {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit",
   });
+}
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+interface PendingAction {
+  id: string;
+  label: string;
+  action: () => void;
 }
 
 export default function BlindPage() {
@@ -33,13 +73,36 @@ export default function BlindPage() {
   const [destinations, setDestinations] = useState<Destination[]>([]);
   const wasOnlineRef = useRef(false);
 
+  // "Announce first, act second" state
+  const [pending, setPending] = useState<PendingAction | null>(null);
+  const pendingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const isOnline =
     location != null &&
     Date.now() - new Date(location.recorded_at).getTime() < STALE_MS;
 
   const activeDest = destinations.find((d) => d.active) ?? null;
 
-  // Load cane and destinations
+  // ── Accessible click handler ─────────────────────────────────────────────
+  function tap(id: string, announceText: string, action: () => void) {
+    if (pendingTimerRef.current) clearTimeout(pendingTimerRef.current);
+
+    if (pending?.id === id) {
+      // Second tap — execute
+      setPending(null);
+      action();
+    } else {
+      // First tap — announce and arm
+      speakNow(`${announceText}. Apasă din nou pentru a confirma.`);
+      setPending({ id, label: announceText, action });
+      pendingTimerRef.current = setTimeout(() => {
+        setPending(null);
+        speakNow("Anulat.");
+      }, PENDING_TIMEOUT_MS);
+    }
+  }
+
+  // ── Data loading ─────────────────────────────────────────────────────────
   useEffect(() => {
     api.get<Cane | null>("/blind-users/me/cane").then((c) => {
       setCane(c);
@@ -49,12 +112,10 @@ export default function BlindPage() {
     api.get<Destination[]>("/destinations/mine").then(setDestinations).catch(() => {});
   }, []);
 
-  // Poll location
   const fetchLocation = useCallback(() => {
     if (!cane) return;
     api.get<Location | null>(`/locations/${cane.id}/latest`)
-      .then(setLocation)
-      .catch(() => {});
+      .then(setLocation).catch(() => {});
   }, [cane]);
 
   useEffect(() => {
@@ -64,7 +125,6 @@ export default function BlindPage() {
     return () => clearInterval(interval);
   }, [fetchLocation, cane]);
 
-  // TTS when status changes
   useEffect(() => {
     if (!cane) return;
     if (wasOnlineRef.current && !isOnline) {
@@ -75,31 +135,47 @@ export default function BlindPage() {
     wasOnlineRef.current = isOnline;
   }, [isOnline, cane]);
 
-  async function handleActivate(id: string, name: string) {
+  // ── Actions ───────────────────────────────────────────────────────────────
+  async function doActivate(id: string, name: string) {
     try {
       const updated = await api.put<Destination>(`/destinations/${id}/activate`, {});
-      setDestinations((prev) =>
-        prev.map((d) => ({ ...d, active: d.id === updated.id }))
-      );
-      speak(`Destinație activată: ${name}`);
+      setDestinations((prev) => prev.map((d) => ({ ...d, active: d.id === updated.id })));
+      speakNow(`Destinație activată: ${name}`);
     } catch { /* ignore */ }
   }
 
-  async function handleDeactivate(id: string) {
+  async function doDeactivate(id: string, name: string) {
     try {
-      const updated = await api.put<Destination>(`/destinations/${id}/deactivate`, {});
-      setDestinations((prev) =>
-        prev.map((d) => (d.id === updated.id ? { ...d, active: false } : d))
-      );
-      speak("Destinație dezactivată.");
+      await api.put<Destination>(`/destinations/${id}/deactivate`, {});
+      setDestinations((prev) => prev.map((d) => (d.id === id ? { ...d, active: false } : d)));
+      speakNow(`Destinație dezactivată: ${name}`);
     } catch { /* ignore */ }
   }
 
-  function handleLogout() {
+  function doLogout() {
     clearToken();
     router.push("/auth");
   }
 
+  function doReadStatus() {
+    const msg = cane
+      ? `Bastonul ${cane.name} este ${isOnline ? "online" : "offline"}. ${
+          activeDest ? `Destinație activă: ${activeDest.name}.` : "Nicio destinație activă."
+        }`
+      : "Niciun baston asociat contului tău.";
+    speakNow(msg);
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  function btnClass(id: string, base: string) {
+    return `${base} ${
+      pending?.id === id
+        ? "ring-4 ring-yellow-400 ring-offset-2 ring-offset-gray-900 scale-95"
+        : ""
+    } transition-all`;
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-gray-900 text-white flex flex-col">
       {/* Header */}
@@ -109,13 +185,25 @@ export default function BlindPage() {
           <span className="text-2xl font-bold tracking-tight">Solemtrix</span>
         </div>
         <button
-          onClick={handleLogout}
-          className="text-gray-400 hover:text-white text-sm font-medium px-3 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+          onClick={() =>
+            tap("logout", "Ieșire din aplicație", doLogout)
+          }
+          className={btnClass("logout", "text-gray-400 hover:text-white text-sm font-medium px-4 py-2 rounded-xl hover:bg-gray-700")}
           aria-label="Deconectare"
         >
           Ieșire
         </button>
       </header>
+
+      {/* Pending toast */}
+      {pending && (
+        <div
+          className="mx-6 mt-4 px-5 py-3 bg-yellow-500 text-gray-900 rounded-2xl text-center font-bold text-lg"
+          aria-live="assertive"
+        >
+          ⚠️ Apasă din nou pentru a confirma: <span className="italic">{pending.label}</span>
+        </div>
+      )}
 
       <main className="flex-1 flex flex-col gap-6 p-6 max-w-2xl mx-auto w-full">
 
@@ -130,9 +218,7 @@ export default function BlindPage() {
           <h1 className="text-4xl font-bold mb-2">
             {cane ? cane.name : "Niciun baston asociat"}
           </h1>
-          <p className="text-2xl font-semibold">
-            {isOnline ? "ONLINE" : "OFFLINE"}
-          </p>
+          <p className="text-2xl font-semibold">{isOnline ? "ONLINE" : "OFFLINE"}</p>
           {location && (
             <p className="text-lg text-white/70 mt-3">
               Ultima actualizare: {formatTime(location.recorded_at)}
@@ -152,15 +238,27 @@ export default function BlindPage() {
             </p>
             <div className="mt-4 flex gap-3">
               <button
-                onClick={() => speak(`Destinație activă: ${activeDest.name}`)}
-                className="flex-1 py-3 bg-blue-700 hover:bg-blue-600 rounded-2xl text-lg font-bold transition-colors"
-                aria-label="Citește destinația"
+                onClick={() =>
+                  tap(
+                    `read-active`,
+                    `Citire destinație activă: ${activeDest.name}`,
+                    () => speakNow(`Destinație activă: ${activeDest.name}`)
+                  )
+                }
+                className={btnClass("read-active", "flex-1 py-4 bg-blue-700 hover:bg-blue-600 rounded-2xl text-lg font-bold")}
+                aria-label="Citește destinația activă"
               >
                 🔊 Citește
               </button>
               <button
-                onClick={() => handleDeactivate(activeDest.id)}
-                className="flex-1 py-3 bg-red-800 hover:bg-red-700 rounded-2xl text-lg font-bold transition-colors"
+                onClick={() =>
+                  tap(
+                    `deactivate-active`,
+                    `Dezactivare destinație: ${activeDest.name}`,
+                    () => doDeactivate(activeDest.id, activeDest.name)
+                  )
+                }
+                className={btnClass("deactivate-active", "flex-1 py-4 bg-red-800 hover:bg-red-700 rounded-2xl text-lg font-bold")}
                 aria-label="Oprește destinația activă"
               >
                 ✕ Oprește
@@ -169,7 +267,7 @@ export default function BlindPage() {
           </section>
         )}
 
-        {/* Destinations list — read-only, only activate */}
+        {/* Destinations list */}
         <section>
           <h2 className="text-xl font-bold text-gray-200 mb-3">Destinații disponibile</h2>
 
@@ -200,16 +298,28 @@ export default function BlindPage() {
                 </div>
                 {dest.active ? (
                   <button
-                    onClick={() => handleDeactivate(dest.id)}
-                    className="bg-gray-700 hover:bg-red-800 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors shrink-0"
+                    onClick={() =>
+                      tap(
+                        `deactivate-${dest.id}`,
+                        `Dezactivare destinație: ${dest.name}`,
+                        () => doDeactivate(dest.id, dest.name)
+                      )
+                    }
+                    className={btnClass(`deactivate-${dest.id}`, "bg-gray-700 hover:bg-red-800 text-white px-4 py-3 rounded-xl text-sm font-semibold shrink-0")}
                     aria-label={`Dezactivează ${dest.name}`}
                   >
                     ✕ Oprește
                   </button>
                 ) : (
                   <button
-                    onClick={() => handleActivate(dest.id, dest.name)}
-                    className="bg-blue-700 hover:bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors shrink-0"
+                    onClick={() =>
+                      tap(
+                        `activate-${dest.id}`,
+                        `Activare destinație: ${dest.name}`,
+                        () => doActivate(dest.id, dest.name)
+                      )
+                    }
+                    className={btnClass(`activate-${dest.id}`, "bg-blue-700 hover:bg-blue-600 text-white px-4 py-3 rounded-xl text-sm font-semibold shrink-0")}
                     aria-label={`Activează ${dest.name}`}
                   >
                     ✓ Activează
@@ -220,21 +330,17 @@ export default function BlindPage() {
           </ul>
         </section>
 
-        {/* Read status button */}
+        {/* Read status */}
         <button
-          onClick={() => {
-            const msg = cane
-              ? `Bastonul ${cane.name} este ${isOnline ? "online" : "offline"}. ${
-                  activeDest ? `Destinație activă: ${activeDest.name}.` : "Nicio destinație activă."
-                }`
-              : "Niciun baston asociat contului tău.";
-            speak(msg);
-          }}
-          className="w-full py-5 bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded-3xl text-2xl font-bold transition-colors"
+          onClick={() =>
+            tap("read-status", "Citire stare curentă", doReadStatus)
+          }
+          className={btnClass("read-status", "w-full py-5 bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded-3xl text-2xl font-bold")}
           aria-label="Citește starea curentă"
         >
           🔊 Citește starea curentă
         </button>
+
       </main>
     </div>
   );

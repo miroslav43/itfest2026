@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-from routers import auth, users, canes, locations, admin, blind_users, destinations
+from routers import auth, users, canes, locations, admin, blind_users, destinations, tts
 
 load_dotenv()
 
@@ -49,6 +49,7 @@ app.include_router(locations.router, prefix="/locations", tags=["Locații"])
 app.include_router(admin.router, prefix="/admin", tags=["Admin"])
 app.include_router(blind_users.router, prefix="/blind-users", tags=["Utilizatori Nevăzători"])
 app.include_router(destinations.router, prefix="/destinations", tags=["Destinații"])
+app.include_router(tts.router, prefix="/tts", tags=["TTS"])
 
 
 @app.get("/", tags=["Health"])

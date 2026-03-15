@@ -113,22 +113,6 @@ def get_my_blind_users(
     )
 
 
-@router.get("/{user_id}/cane", response_model=Optional[schemas.CaneOut], summary="Bastonul unui nevăzător (aparținător/admin)")
-def get_blind_user_cane(
-    user_id: str,
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(require_caregiver_or_admin),
-):
-    link = (
-        db.query(models.BlindUserCane)
-        .filter(models.BlindUserCane.blind_user_id == user_id)
-        .first()
-    )
-    if not link:
-        return None
-    return db.query(models.Cane).filter(models.Cane.id == link.cane_id).first()
-
-
 @router.get("/me/cane", response_model=Optional[schemas.CaneOut], summary="Bastonul utilizatorului nevăzător")
 def get_my_cane(
     db: Session = Depends(get_db),
@@ -139,6 +123,22 @@ def get_my_cane(
     link = (
         db.query(models.BlindUserCane)
         .filter(models.BlindUserCane.blind_user_id == current_user.id)
+        .first()
+    )
+    if not link:
+        return None
+    return db.query(models.Cane).filter(models.Cane.id == link.cane_id).first()
+
+
+@router.get("/{user_id}/cane", response_model=Optional[schemas.CaneOut], summary="Bastonul unui nevăzător (aparținător/admin)")
+def get_blind_user_cane(
+    user_id: str,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(require_caregiver_or_admin),
+):
+    link = (
+        db.query(models.BlindUserCane)
+        .filter(models.BlindUserCane.blind_user_id == user_id)
         .first()
     )
     if not link:

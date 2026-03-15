@@ -18,6 +18,7 @@ const MARKER_COLORS: Record<IndoorMarkerType, string> = {
   end: "#ef4444",
   waypoint: "#3b82f6",
   obstacle: "#f97316",
+  router: "#38bdf8",
 };
 
 const MARKER_LABELS: Record<IndoorMarkerType, string> = {
@@ -25,6 +26,7 @@ const MARKER_LABELS: Record<IndoorMarkerType, string> = {
   end: "Destinație",
   waypoint: "Punct",
   obstacle: "Obstacol",
+  router: "Router",
 };
 
 const OBSTACLE_RADIUS = 0.35;
@@ -260,6 +262,98 @@ function MarkerSphere({ marker }: { marker: IndoorMarker }) {
   );
 }
 
+/* ── Router marker ─────────────────────────────────────────────────────────── */
+
+function RouterMarker({
+  marker,
+  distanceToCane,
+}: {
+  marker: IndoorMarker;
+  distanceToCane: number | null;
+}) {
+  const coreRef = useRef<THREE.Mesh>(null);
+  const ring1Ref = useRef<THREE.Mesh>(null);
+  const ring2Ref = useRef<THREE.Mesh>(null);
+  const ring3Ref = useRef<THREE.Mesh>(null);
+
+  useFrame((state) => {
+    const t = state.clock.elapsedTime;
+    if (coreRef.current) {
+      coreRef.current.position.y =
+        marker.position[1] + 0.06 + Math.sin(t * 2) * 0.02;
+    }
+    // Ripple rings outward
+    const rings = [ring1Ref, ring2Ref, ring3Ref];
+    rings.forEach((ref, i) => {
+      if (!ref.current) return;
+      const phase = (t * 0.5 + i * 0.33) % 1;
+      const s = 0.5 + phase * 2.5;
+      ref.current.scale.setScalar(s);
+      (ref.current.material as THREE.MeshBasicMaterial).opacity =
+        (1 - phase) * 0.35;
+    });
+  });
+
+  const distLabel =
+    distanceToCane !== null
+      ? `${distanceToCane.toFixed(2)} m`
+      : null;
+
+  return (
+    <group position={marker.position}>
+      {/* Ripple rings on floor */}
+      {[ring1Ref, ring2Ref, ring3Ref].map((ref, i) => (
+        <mesh key={i} ref={ref} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]}>
+          <ringGeometry args={[0.18, 0.22, 32]} />
+          <meshBasicMaterial
+            color="#38bdf8"
+            transparent
+            opacity={0.3}
+            side={THREE.DoubleSide}
+            depthWrite={false}
+          />
+        </mesh>
+      ))}
+
+      {/* Core glowing sphere */}
+      <mesh ref={coreRef}>
+        <sphereGeometry args={[0.1, 20, 20]} />
+        <meshStandardMaterial
+          color="#38bdf8"
+          emissive="#0ea5e9"
+          emissiveIntensity={1.2}
+          transparent
+          opacity={0.95}
+        />
+      </mesh>
+
+      {/* Label with distance */}
+      <Html
+        position={[0, 0.35, 0]}
+        center
+        distanceFactor={4}
+      >
+        <div className="flex flex-col items-center gap-0.5 select-none pointer-events-none">
+          <div className="bg-sky-500/90 backdrop-blur text-white text-[10px] px-2 py-0.5 rounded-full font-semibold flex items-center gap-1 whitespace-nowrap">
+            {/* WiFi icon SVG */}
+            <svg width="10" height="8" viewBox="0 0 20 16" fill="none">
+              <path d="M2 6a12 12 0 0116 0" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+              <path d="M5.5 9.5a7 7 0 019 0" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+              <path d="M9 13a1 1 0 002 0" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+            </svg>
+            Router
+          </div>
+          {distLabel && (
+            <div className="bg-sky-900/80 backdrop-blur text-sky-200 text-[9px] px-2 py-0.5 rounded-full font-mono whitespace-nowrap">
+              📏 {distLabel}
+            </div>
+          )}
+        </div>
+      </Html>
+    </group>
+  );
+}
+
 /* ── Animated route ────────────────────────────────────────────────────────── */
 
 function RoutePath({
@@ -372,8 +466,19 @@ interface SceneProps {
   onContextLost: () => void;
 }
 
+function dist3(a: [number, number, number], b: [number, number, number]) {
+  return Math.sqrt((b[0]-a[0])**2 + (b[1]-a[1])**2 + (b[2]-a[2])**2);
+}
+
 function Scene(props: SceneProps) {
   const obstacles = props.markers.filter((m) => m.type === "obstacle");
+  const routerMarker = props.markers.find((m) => m.type === "router") ?? null;
+  const startMarker  = props.markers.find((m) => m.type === "start")  ?? null;
+
+  const distanceToRouter: number | null =
+    routerMarker && startMarker
+      ? dist3(startMarker.position, routerMarker.position)
+      : null;
 
   return (
     <>
@@ -402,7 +507,17 @@ function Scene(props: SceneProps) {
         </Suspense>
       </ModelErrorBoundary>
 
-      {props.markers.map((m) => <MarkerSphere key={m.id} marker={m} />)}
+      {props.markers
+        .filter((m) => m.type !== "router")
+        .map((m) => <MarkerSphere key={m.id} marker={m} />)}
+
+      {routerMarker && (
+        <RouterMarker
+          key={routerMarker.id}
+          marker={routerMarker}
+          distanceToCane={distanceToRouter}
+        />
+      )}
 
       {props.routePath.length >= 2 && (
         <RoutePath

@@ -49,7 +49,7 @@ export interface ApiError {
 
 // ─── Indoor 3D Map ───────────────────────────────────────────────────────────
 
-export type IndoorMarkerType = "start" | "end" | "waypoint" | "obstacle";
+export type IndoorMarkerType = "start" | "end" | "waypoint" | "obstacle" | "router";
 
 export interface IndoorMarker {
   id: string;

@@ -33,6 +33,7 @@ const MODES: { key: PlacementMode; label: string; icon: string; color: string }[
   { key: "end",      label: "Destinație",  icon: "🔴",  color: "bg-red-600" },
   { key: "waypoint", label: "Waypoint",    icon: "🔵",  color: "bg-blue-600" },
   { key: "obstacle", label: "Obstacol",    icon: "⚠️",  color: "bg-orange-500" },
+  { key: "router",   label: "Router",      icon: "📡",  color: "bg-sky-600" },
 ];
 
 let markerId = 0;
@@ -75,6 +76,13 @@ export default function IndoorMapPage() {
             label: `Obstacol ${prev.filter((m) => m.type === "obstacle").length + 1}`,
           }];
         }
+        if (mode === "router") {
+          // Only one router allowed at a time
+          return [...prev.filter((m) => m.type !== "router"), {
+            id: `m_${++markerId}`, position, type: "router" as IndoorMarkerType,
+            label: "Router",
+          }];
+        }
         return [...prev, {
           id: `m_${++markerId}`, position, type: "waypoint" as IndoorMarkerType,
           label: `WP ${prev.filter((m) => m.type === "waypoint").length + 1}`,
@@ -107,10 +115,22 @@ export default function IndoorMapPage() {
       const [bx, by, bz] = routePath[i];
       dist += Math.sqrt((bx - ax) ** 2 + (by - ay) ** 2 + (bz - az) ** 2);
     }
+
+    const router = markers.find((m) => m.type === "router");
+    const start  = markers.find((m) => m.type === "start");
+    let routerDist: number | null = null;
+    if (router && start) {
+      const [ax, ay, az] = start.position;
+      const [bx, by, bz] = router.position;
+      routerDist = Math.sqrt((bx - ax) ** 2 + (by - ay) ** 2 + (bz - az) ** 2);
+    }
+
     return {
-      markers: markers.filter((m) => m.type !== "obstacle").length,
+      markers: markers.filter((m) => m.type !== "obstacle" && m.type !== "router").length,
       obstacles: markers.filter((m) => m.type === "obstacle").length,
       routeLength: dist,
+      routerDist,
+      hasRouter: !!router,
     };
   }, [markers, routePath]);
 
@@ -249,7 +269,7 @@ export default function IndoorMapPage() {
       {/* Stats */}
       <div className="p-4">
         <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-2 block">Informații</label>
-        <div className="grid grid-cols-3 gap-2 text-xs">
+        <div className="grid grid-cols-3 gap-2 text-xs mb-2">
           <div className="bg-accent-500/10 border border-accent-500/15 rounded-xl p-2.5 text-center">
             <span className="block text-accent-300 font-bold text-lg">{stats.markers}</span>
             <span className="text-accent-400/70 text-[10px]">Marcaje</span>
@@ -265,6 +285,29 @@ export default function IndoorMapPage() {
             <span className="text-success-400/70 text-[10px]">Dist.</span>
           </div>
         </div>
+
+        {/* Router distance card */}
+        {stats.hasRouter && (
+          <div className={`rounded-xl px-3 py-2.5 border flex items-center gap-2.5 ${
+            stats.routerDist !== null
+              ? "bg-sky-500/10 border-sky-500/25"
+              : "bg-surface-200 border-white/[0.06]"
+          }`}>
+            <span className="text-base">📡</span>
+            <div className="min-w-0">
+              <p className="text-[11px] font-semibold text-sky-300">Router WiFi</p>
+              {stats.routerDist !== null ? (
+                <p className="text-xs font-mono text-sky-200">
+                  Distanță: <strong>{stats.routerDist.toFixed(2)} m</strong>
+                </p>
+              ) : (
+                <p className="text-[10px] text-slate-500">
+                  Plasează &quot;Start&quot; pentru distanță
+                </p>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </>
   );

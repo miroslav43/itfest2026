@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import type { Cane } from "@/types";
+import { useState, useEffect } from "react";
+import type { Cane, Role } from "@/types";
 import { api, ApiError } from "@/lib/api";
 import { getRole } from "@/lib/auth";
 
@@ -20,7 +20,11 @@ export default function CaneSidebar({
   onCaneRemoved,
 }: Props) {
   const [removingId, setRemovingId] = useState<string | null>(null);
-  const role = getRole();
+  const [role, setRole] = useState<Role | null>(null);
+
+  useEffect(() => {
+    setRole(getRole());
+  }, []);
 
   async function handleRemove(cane: Cane, e: React.MouseEvent) {
     e.stopPropagation();

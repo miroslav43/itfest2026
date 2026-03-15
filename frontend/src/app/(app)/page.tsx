@@ -168,8 +168,11 @@ export default function TrackingPage() {
                 Admin
               </Link>
             )}
-            <Link href="/simulator" className="px-3 py-1.5 text-xs font-medium text-slate-400 hover:text-slate-100 hover:bg-white/[0.06] rounded-lg transition-colors">
-              Simulator
+            <Link href="/indoor-map" className="px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors">
+              🏗 Indoor 3D
+            </Link>
+            <Link href="/simulator" className="px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors">
+              🛠 Simulator
             </Link>
             <Link href="/settings" className="px-3 py-1.5 text-xs font-medium text-slate-400 hover:text-slate-100 hover:bg-white/[0.06] rounded-lg transition-colors">
               Setări

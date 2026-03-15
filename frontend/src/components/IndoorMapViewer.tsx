@@ -1,6 +1,7 @@
 "use client";
 
-import { Suspense, useRef, useMemo, useEffect, useCallback, useState } from "react";
+import { Suspense, useRef, useMemo, useEffect, useCallback, useState, Component } from "react";
+import type { ReactNode, ErrorInfo } from "react";
 import { Canvas, useFrame, useThree, ThreeEvent } from "@react-three/fiber";
 import {
   OrbitControls,
@@ -37,6 +38,88 @@ function LoadingFallback() {
       </div>
     </Html>
   );
+}
+
+/** Procedural placeholder shown when the GLB file is missing */
+function ProceduralRoom({
+  placementMode,
+  onSurfaceClick,
+}: {
+  placementMode: string;
+  onSurfaceClick: (pos: [number, number, number]) => void;
+}) {
+  const floorRef = useRef<THREE.Mesh>(null);
+
+  const handleClick = useCallback(
+    (e: ThreeEvent<MouseEvent>) => {
+      if (placementMode === "view") return;
+      e.stopPropagation();
+      onSurfaceClick([e.point.x, e.point.y, e.point.z]);
+    },
+    [placementMode, onSurfaceClick]
+  );
+
+  const wallMat = new THREE.MeshStandardMaterial({ color: "#5a5755", roughness: 0.9, metalness: 0 });
+  const floorMat = new THREE.MeshStandardMaterial({ color: "#3d3b39", roughness: 0.95, metalness: 0 });
+
+  return (
+    <group>
+      {/* Floor */}
+      <mesh ref={floorRef} rotation={[-Math.PI / 2, 0, 0]} receiveShadow onClick={handleClick}>
+        <planeGeometry args={[10, 8]} />
+        <primitive object={floorMat} attach="material" />
+      </mesh>
+
+      {/* Walls */}
+      {/* Back */}
+      <mesh position={[0, 1.5, -4]} castShadow receiveShadow>
+        <boxGeometry args={[10, 3, 0.15]} />
+        <primitive object={wallMat} attach="material" />
+      </mesh>
+      {/* Front */}
+      <mesh position={[0, 1.5, 4]} castShadow receiveShadow>
+        <boxGeometry args={[10, 3, 0.15]} />
+        <primitive object={wallMat} attach="material" />
+      </mesh>
+      {/* Left */}
+      <mesh position={[-5, 1.5, 0]} castShadow receiveShadow>
+        <boxGeometry args={[0.15, 3, 8]} />
+        <primitive object={wallMat} attach="material" />
+      </mesh>
+      {/* Right */}
+      <mesh position={[5, 1.5, 0]} castShadow receiveShadow>
+        <boxGeometry args={[0.15, 3, 8]} />
+        <primitive object={wallMat} attach="material" />
+      </mesh>
+
+      <Html position={[0, 2.5, 0]} center distanceFactor={8}>
+        <div className="bg-orange-500/90 backdrop-blur text-white text-xs px-3 py-1.5 rounded-xl font-medium select-none pointer-events-none text-center max-w-[200px]">
+          ⚠ Modelul 3D lipsește<br />
+          <span className="text-[10px] opacity-80">Adaugă fișierul <code>public/models/part1.glb</code></span>
+        </div>
+      </Html>
+    </group>
+  );
+}
+
+/** Error boundary that catches GLB load failures */
+class ModelErrorBoundary extends Component<
+  { children: ReactNode; fallback: ReactNode },
+  { hasError: boolean }
+> {
+  state = { hasError: false };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.warn("IndoorMapViewer: model load failed —", error.message, info);
+  }
+
+  render() {
+    return this.state.hasError ? this.props.fallback : this.props.children;
+  }
 }
 
 function AutoFit({ scene }: { scene: THREE.Object3D }) {
@@ -306,9 +389,18 @@ function Scene(props: SceneProps) {
       <directionalLight position={[0, 3, 10]} intensity={0.2} color="#f5f0e8" />
       <hemisphereLight args={["#f0ede8", "#d4d0cb", 0.5]} />
 
-      <Suspense fallback={<LoadingFallback />}>
-        <Model url={props.modelUrl} placementMode={props.placementMode} onSurfaceClick={props.onSurfaceClick} />
-      </Suspense>
+      <ModelErrorBoundary
+        fallback={
+          <ProceduralRoom
+            placementMode={props.placementMode}
+            onSurfaceClick={props.onSurfaceClick}
+          />
+        }
+      >
+        <Suspense fallback={<LoadingFallback />}>
+          <Model url={props.modelUrl} placementMode={props.placementMode} onSurfaceClick={props.onSurfaceClick} />
+        </Suspense>
+      </ModelErrorBoundary>
 
       {props.markers.map((m) => <MarkerSphere key={m.id} marker={m} />)}
 

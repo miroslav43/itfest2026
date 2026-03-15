@@ -1,12 +1,15 @@
 "use client";
 
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useState, useEffect } from "react";
 import { GoogleMap, useJsApiLoader } from "@react-google-maps/api";
 import type { Location } from "@/types";
 import { Spinner } from "@/components/ui";
 
 const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "";
-const DEFAULT_CENTER = { lat: 44.4268, lng: 26.1025 };
+
+/** Iulius Town Timișoara — default fallback center */
+const IULIUS_TOWN: google.maps.LatLngLiteral = { lat: 45.7521, lng: 21.2267 };
+
 const LIBRARIES: ("places")[] = ["places"];
 
 const MAP_OPTIONS: google.maps.MapOptions = {
@@ -22,9 +25,35 @@ interface Props {
   caneName?: string;
 }
 
+/** True on touch-primary devices (phones / tablets). */
+function isMobileDevice(): boolean {
+  return typeof navigator !== "undefined" && navigator.maxTouchPoints > 0;
+}
+
 export default function CaneMap({ location, caneName }: Props) {
   const mapRef = useRef<google.maps.Map | null>(null);
   const markerRef = useRef<google.maps.Marker | null>(null);
+
+  // Start at Iulius Town; if on mobile and no cane loc, replace with GPS.
+  const [deviceCenter, setDeviceCenter] =
+    useState<google.maps.LatLngLiteral>(IULIUS_TOWN);
+  const [usingDeviceGPS, setUsingDeviceGPS] = useState(false);
+
+  useEffect(() => {
+    if (!isMobileDevice()) return;
+    if (!navigator.geolocation) return;
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setDeviceCenter({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setUsingDeviceGPS(true);
+      },
+      () => {
+        // Permission denied or unavailable — stay on Iulius Town fallback.
+      },
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 30_000 }
+    );
+  }, []);
 
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: API_KEY,
@@ -101,13 +130,16 @@ export default function CaneMap({ location, caneName }: Props) {
 
   const center = location
     ? { lat: location.latitude, lng: location.longitude }
-    : DEFAULT_CENTER;
+    : deviceCenter;
+
+  // Zoom: 16 when tracking a cane, 15 when showing device GPS, 13 for city default.
+  const zoom = location ? 16 : usingDeviceGPS ? 15 : 13;
 
   return (
     <GoogleMap
       mapContainerStyle={{ width: "100%", height: "100%" }}
       center={center}
-      zoom={location ? 16 : 12}
+      zoom={zoom}
       options={MAP_OPTIONS}
       onLoad={(map) => { onLoad(map); handleLocationCleared(); }}
       onIdle={onMapIdle}

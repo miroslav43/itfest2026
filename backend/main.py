@@ -48,7 +48,20 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
+# Default origins include the web dev server and all Capacitor WebView origins.
+# In production, set ALLOWED_ORIGINS in the .env to your deployed frontend URL.
+_default_origins = [
+    "http://localhost:3000",
+    "https://localhost",
+    "http://localhost",
+    "capacitor://localhost",
+]
+_env_origins = os.getenv("ALLOWED_ORIGINS", "").strip()
+allowed_origins = (
+    [o.strip() for o in _env_origins.split(",") if o.strip()]
+    if _env_origins
+    else _default_origins
+)
 
 app.add_middleware(
     CORSMiddleware,

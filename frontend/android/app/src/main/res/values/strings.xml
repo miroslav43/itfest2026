@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Solemtrix</string>
+    <string name="title_activity_main">Solemtrix</string>
+    <string name="package_name">com.solemtrix.app</string>
+    <string name="custom_url_scheme">com.solemtrix.app</string>
+</resources>

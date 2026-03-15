@@ -7,6 +7,7 @@ import { clearToken, getToken } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 import type { Cane, Location, Destination } from "@/types";
 import { useVoiceCommands } from "@/hooks/useVoiceCommands";
+import { hapticMedium, hapticHeavy } from "@/lib/haptics";
 
 // BlindMap is client-only (Google Maps cannot SSR)
 const BlindMap = dynamic(() => import("@/components/BlindMap"), { ssr: false });
@@ -91,9 +92,13 @@ export default function BlindPage() {
   function tap(id: string, announceText: string, action: () => void) {
     if (pendingTimerRef.current) clearTimeout(pendingTimerRef.current);
     if (pending?.id === id) {
+      // Second tap — confirm action with a strong haptic pulse
+      hapticHeavy();
       setPending(null);
       action();
     } else {
+      // First tap — light haptic to acknowledge
+      hapticMedium();
       speakNow(`${announceText}. Apasă din nou pentru a confirma.`);
       setPending({ id, label: announceText, action });
       pendingTimerRef.current = setTimeout(() => {

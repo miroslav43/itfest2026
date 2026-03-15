@@ -5,10 +5,22 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:mobile": "BUILD_TARGET=mobile next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "cap:sync": "npm run build:mobile && npx cap sync android",
+    "cap:sync:local": "NEXT_PUBLIC_API_URL=http://$(ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1):8000 BUILD_TARGET=mobile next build && npx cap sync android",
+    "cap:open": "npx cap open android",
+    "cap:run": "npm run build:mobile && npx cap sync android && npx cap run android",
+    "cap:run:local": "npm run cap:sync:local && npx cap run android"
   },
   "dependencies": {
+    "@capacitor/android": "^8.2.0",
+    "@capacitor/cli": "^8.2.0",
+    "@capacitor/core": "^8.2.0",
+    "@capacitor/haptics": "^8.0.1",
+    "@capacitor/splash-screen": "^8.0.1",
+    "@capacitor/status-bar": "^8.0.1",
     "@picovoice/porcupine-web": "^4.0.0",
     "@picovoice/web-voice-processor": "^4.0.9",
     "@react-google-maps/api": "^2.20.3",

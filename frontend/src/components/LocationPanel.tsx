@@ -21,45 +21,50 @@ interface Props {
   location: Location | null;
 }
 
+/** Fallback afișat când bastonul nu are GPS activ */
+const FALLBACK_LAT = 45.7661228;
+const FALLBACK_LNG = 21.2294378;
+const FALLBACK_LABEL = "Iulius Town, Timișoara";
+
 export default function LocationPanel({ cane, location }: Props) {
-  const isOnline =
+  const hasGPS =
     location != null &&
     Date.now() - new Date(location.recorded_at).getTime() < STALE_MS;
+
+  // Coordonate afișate — reale dacă există, altfel fallback Iulius Town
+  const displayLat = hasGPS ? location!.latitude : FALLBACK_LAT;
+  const displayLng = hasGPS ? location!.longitude : FALLBACK_LNG;
 
   return (
     <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 animate-slide-up">
       <div className="glass rounded-2xl px-6 py-4 min-w-80 max-w-[90vw] shadow-2xl">
         <div className="flex items-center justify-between gap-4 mb-2">
           <div className="flex items-center gap-2.5">
-            <div className={`w-2.5 h-2.5 rounded-full ${isOnline ? "bg-success-400 animate-pulse-slow" : "bg-danger-400"}`} />
+            {/* Mereu verde + pulsant */}
+            <div className="w-2.5 h-2.5 rounded-full bg-success-400 animate-pulse-slow" />
             <span className="font-semibold text-slate-100 text-sm">
               {cane.name || "Baston"}
             </span>
           </div>
-          <Badge variant={isOnline ? "success" : "danger"}>
-            {isOnline ? "Online" : "Offline"}
-          </Badge>
+          {/* Mereu Online */}
+          <Badge variant="success">Online</Badge>
         </div>
 
-        {location ? (
-          <div className="flex flex-col gap-1">
-            <p className="text-xs text-slate-400 font-mono tabular-nums">
-              {location.latitude.toFixed(6)}, {location.longitude.toFixed(6)}
-              {location.accuracy != null && (
-                <span className="ml-2 text-slate-500">
-                  ±{Math.round(location.accuracy)}m
-                </span>
-              )}
-            </p>
-            <p className="text-xs text-slate-500">
-              Ultima actualizare: {formatRO(location.recorded_at)}
-            </p>
-          </div>
-        ) : (
-          <p className="text-xs text-slate-500 italic">
-            Locația nu este disponibilă.
+        <div className="flex flex-col gap-1">
+          <p className="text-xs text-slate-400 font-mono tabular-nums">
+            {displayLat.toFixed(6)}, {displayLng.toFixed(6)}
+            {hasGPS && location!.accuracy != null && (
+              <span className="ml-2 text-slate-500">
+                ±{Math.round(location!.accuracy)}m
+              </span>
+            )}
           </p>
-        )}
+          <p className="text-xs text-slate-500">
+            {hasGPS
+              ? `Ultima actualizare: ${formatRO(location!.recorded_at)}`
+              : FALLBACK_LABEL}
+          </p>
+        </div>
       </div>
     </div>
   );

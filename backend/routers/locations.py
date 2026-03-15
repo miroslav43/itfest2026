@@ -11,16 +11,37 @@ router = APIRouter()
 
 
 def _verify_access(cane_id: str, user: models.User, db: Session):
-    access = (
-        db.query(models.CaneAccess)
-        .filter(
-            models.CaneAccess.caregiver_id == user.id,
-            models.CaneAccess.cane_id == cane_id,
+    """Allow access if the user is:
+    - a caregiver/admin with a CaneAccess entry for this cane, OR
+    - the blind user whose cane this is (BlindUserCane link).
+    """
+    if user.role == "admin":
+        return
+
+    if user.role == "blind_user":
+        link = (
+            db.query(models.BlindUserCane)
+            .filter(
+                models.BlindUserCane.blind_user_id == user.id,
+                models.BlindUserCane.cane_id == cane_id,
+            )
+            .first()
         )
-        .first()
-    )
-    if not access:
-        raise HTTPException(status_code=403, detail="Acces interzis pentru acest baston.")
+        if link:
+            return
+    else:
+        access = (
+            db.query(models.CaneAccess)
+            .filter(
+                models.CaneAccess.caregiver_id == user.id,
+                models.CaneAccess.cane_id == cane_id,
+            )
+            .first()
+        )
+        if access:
+            return
+
+    raise HTTPException(status_code=403, detail="Acces interzis pentru acest baston.")
 
 
 @router.get(

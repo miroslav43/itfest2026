@@ -1,13 +1,17 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import dynamic from "next/dynamic";
 import { api } from "@/lib/api";
 import { clearToken, getToken } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 import type { Cane, Location, Destination } from "@/types";
+import { useVoiceCommands } from "@/hooks/useVoiceCommands";
+
+// BlindMap is client-only (Google Maps cannot SSR)
+const BlindMap = dynamic(() => import("@/components/BlindMap"), { ssr: false });
 
 const POLL_MS = 3000;
-const STALE_MS = 5 * 60 * 1000;
 const PENDING_TIMEOUT_MS = 15000;
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 
@@ -70,17 +74,20 @@ export default function BlindPage() {
   const [cane, setCane] = useState<Cane | null>(null);
   const [location, setLocation] = useState<Location | null>(null);
   const [destinations, setDestinations] = useState<Destination[]>([]);
-  const wasOnlineRef = useRef(false);
-
   const [pending, setPending] = useState<PendingAction | null>(null);
+
   const pendingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const isOnline =
-    location != null &&
-    Date.now() - new Date(location.recorded_at).getTime() < STALE_MS;
+  // ── Fix TTS loop — announce only on real state changes ────────────────────
+  const initializedRef = useRef(false);
+  const lastAnnouncedStateRef = useRef<"online" | "offline" | null>(null);
+
+  // Cane is considered online whenever it's associated with this account
+  const isOnline = cane != null;
 
   const activeDest = destinations.find((d) => d.active) ?? null;
 
+  // ── Actions ───────────────────────────────────────────────────────────────
   function tap(id: string, announceText: string, action: () => void) {
     if (pendingTimerRef.current) clearTimeout(pendingTimerRef.current);
     if (pending?.id === id) {
@@ -95,37 +102,6 @@ export default function BlindPage() {
       }, PENDING_TIMEOUT_MS);
     }
   }
-
-  useEffect(() => {
-    api.get<Cane | null>("/blind-users/me/cane").then((c) => {
-      setCane(c);
-      if (c) speak(`Baston conectat: ${c.name}`);
-    }).catch(() => {});
-    api.get<Destination[]>("/destinations/mine").then(setDestinations).catch(() => {});
-  }, []);
-
-  const fetchLocation = useCallback(() => {
-    if (!cane) return;
-    api.get<Location | null>(`/locations/${cane.id}/latest`)
-      .then(setLocation).catch(() => {});
-  }, [cane]);
-
-  useEffect(() => {
-    if (!cane) return;
-    fetchLocation();
-    const interval = setInterval(fetchLocation, POLL_MS);
-    return () => clearInterval(interval);
-  }, [fetchLocation, cane]);
-
-  useEffect(() => {
-    if (!cane) return;
-    if (wasOnlineRef.current && !isOnline) {
-      speak("Atenție! Bastonul a pierdut semnalul GPS.");
-    } else if (!wasOnlineRef.current && isOnline) {
-      speak("Bastonul este online. Locație actualizată.");
-    }
-    wasOnlineRef.current = isOnline;
-  }, [isOnline, cane]);
 
   async function doActivate(id: string, name: string) {
     try {
@@ -156,6 +132,58 @@ export default function BlindPage() {
 
   function isPending(id: string) { return pending?.id === id; }
 
+  // ── Load cane + destinations on mount ────────────────────────────────────
+  useEffect(() => {
+    api.get<Cane | null>("/blind-users/me/cane").then(setCane).catch(() => {});
+    api.get<Destination[]>("/destinations/mine").then(setDestinations).catch(() => {});
+  }, []);
+
+  // ── Poll location ─────────────────────────────────────────────────────────
+  const fetchLocation = useCallback(() => {
+    if (!cane) return;
+    api.get<Location | null>(`/locations/${cane.id}/latest`)
+      .then(setLocation).catch(() => {});
+  }, [cane]);
+
+  useEffect(() => {
+    if (!cane) return;
+    fetchLocation();
+    const interval = setInterval(fetchLocation, POLL_MS);
+    return () => clearInterval(interval);
+  }, [fetchLocation, cane]);
+
+  // ── TTS: announce only on first load and real transitions ─────────────────
+  useEffect(() => {
+    if (!cane) return;
+    const currentState = isOnline ? "online" : "offline";
+
+    if (!initializedRef.current) {
+      // Single announcement after data is first available
+      initializedRef.current = true;
+      lastAnnouncedStateRef.current = currentState;
+      if (isOnline) speak("Bastonul este online.");
+      else speak("Bastonul este offline. Verifică conexiunea.");
+      return;
+    }
+
+    // Only speak when the state actually transitions
+    if (currentState !== lastAnnouncedStateRef.current) {
+      lastAnnouncedStateRef.current = currentState;
+      if (!isOnline) speak("Atenție! Bastonul a pierdut semnalul GPS.");
+      else speak("Bastonul s-a reconectat.");
+    }
+  }, [isOnline, cane]);
+
+  // ── Voice commands hook ───────────────────────────────────────────────────
+  const { isWakeWordActive, isListening, initError, startListening } = useVoiceCommands({
+    destinations,
+    onActivate: doActivate,
+    onDeactivate: doDeactivate,
+    onReadStatus: doReadStatus,
+    speak: speakNow,
+  });
+
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-surface-0 text-white flex flex-col">
       {/* Header */}
@@ -168,17 +196,57 @@ export default function BlindPage() {
           </div>
           <span className="text-2xl font-bold tracking-tight text-slate-100">Solemtrix</span>
         </div>
-        <button
-          onClick={() => tap("logout", "Ieșire din aplicație", doLogout)}
-          className={`text-sm font-semibold px-5 py-3 rounded-2xl transition-all duration-200
-            ${isPending("logout")
-              ? "bg-warning-500 text-surface-0 ring-4 ring-warning-400/40 scale-95"
-              : "text-slate-400 hover:text-white hover:bg-white/[0.06]"
-            }`}
-          aria-label="Deconectare"
-        >
-          Ieșire
-        </button>
+
+        <div className="flex items-center gap-3">
+          {/* Mic button — wake word indicator or manual trigger */}
+          <button
+            onClick={startListening}
+            title={
+              initError
+                ? `Voce indisponibilă: ${initError}`
+                : isListening
+                ? "Ascult comanda..."
+                : isWakeWordActive
+                ? "Spune «Alexa» pentru a activa"
+                : "Apasă pentru comenzi vocale"
+            }
+            aria-label={isListening ? "Ascult comanda vocală" : "Activează comenzi vocale"}
+            className={`w-11 h-11 rounded-2xl flex items-center justify-center border transition-all duration-200
+              ${initError
+                ? "border-danger-500/30 text-danger-400 bg-danger-500/10"
+                : isListening
+                ? "border-accent-400/60 text-accent-300 bg-accent-500/20 animate-pulse"
+                : isWakeWordActive
+                ? "border-success-500/30 text-success-400 bg-success-500/10"
+                : "border-white/[0.08] text-slate-400 bg-white/[0.04] hover:bg-white/[0.08]"
+              }`}
+          >
+            {isListening ? (
+              /* Waveform icon while listening */
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M12 1v22M8 5v14M16 5v14M4 9v6M20 9v6" />
+              </svg>
+            ) : (
+              /* Mic icon */
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <rect x="9" y="2" width="6" height="12" rx="3" />
+                <path d="M5 10a7 7 0 0014 0M12 19v3M8 22h8" />
+              </svg>
+            )}
+          </button>
+
+          <button
+            onClick={() => tap("logout", "Ieșire din aplicație", doLogout)}
+            className={`text-sm font-semibold px-5 py-3 rounded-2xl transition-all duration-200
+              ${isPending("logout")
+                ? "bg-warning-500 text-surface-0 ring-4 ring-warning-400/40 scale-95"
+                : "text-slate-400 hover:text-white hover:bg-white/[0.06]"
+              }`}
+            aria-label="Deconectare"
+          >
+            Ieșire
+          </button>
+        </div>
       </header>
 
       {/* Pending confirmation toast */}
@@ -189,6 +257,17 @@ export default function BlindPage() {
           aria-live="assertive"
         >
           Apasă din nou: {pending.label}
+        </div>
+      )}
+
+      {/* Voice listening overlay */}
+      {isListening && (
+        <div
+          className="mx-4 mt-4 px-6 py-4 bg-accent-500/20 border border-accent-500/30 text-accent-300 rounded-2xl text-center font-semibold text-base animate-fade-in"
+          role="status"
+          aria-live="polite"
+        >
+          Ascult... Spune comanda ta.
         </div>
       )}
 
@@ -228,6 +307,17 @@ export default function BlindPage() {
               Ultima actualizare: {formatTime(location.recorded_at)}
             </p>
           )}
+        </section>
+
+        {/* Map — always shown (compact 256px strip) */}
+        <section aria-label="Hartă navigare">
+          <BlindMap
+            location={location}
+            activeDest={activeDest}
+            caneName={cane?.name}
+            isOnline={isOnline}
+            onRouteCalculated={speak}
+          />
         </section>
 
         {/* Active destination hero */}
@@ -340,6 +430,21 @@ export default function BlindPage() {
         >
           Citește starea curentă
         </button>
+
+        {/* Voice commands hint */}
+        <div className="px-4 pb-4 text-center">
+          {initError ? (
+            <p className="text-xs text-danger-400/70">
+              Comenzi vocale inactive: {initError}
+            </p>
+          ) : (
+            <p className="text-xs text-slate-600">
+              {isWakeWordActive
+                ? "Spune «Alexa, vreau să merg la [destinație]» sau apasă microfon."
+                : "Configurează NEXT_PUBLIC_PICOVOICE_ACCESS_KEY pentru wake word."}
+            </p>
+          )}
+        </div>
 
       </main>
     </div>

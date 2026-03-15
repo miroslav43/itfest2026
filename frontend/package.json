@@ -9,6 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@picovoice/porcupine-web": "^4.0.0",
+    "@picovoice/web-voice-processor": "^4.0.9",
     "@react-google-maps/api": "^2.20.3",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",

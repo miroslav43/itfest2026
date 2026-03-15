@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { api, ApiError } from "@/lib/api";
-import { getRole } from "@/lib/auth";
+import { getRole, clearToken } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 import type { User, Cane, Role } from "@/types";
 import { Button, Input, Badge, Card, StatCard, Modal, Logo, Spinner } from "@/components/ui";
@@ -159,10 +159,19 @@ export default function AdminPage() {
             <Badge variant="accent">Admin</Badge>
           </div>
         </div>
-        <Link href="/" className="text-sm text-slate-400 hover:text-accent-400 transition-colors flex items-center gap-1.5">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M10 4L6 8l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-          Hartă
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link href="/" className="text-sm text-slate-400 hover:text-accent-400 transition-colors flex items-center gap-1.5">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M10 4L6 8l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            Hartă
+          </Link>
+          <div className="w-px h-5 bg-white/[0.06]" />
+          <button
+            onClick={() => { clearToken(); router.push("/auth"); }}
+            className="text-sm text-danger-400 hover:text-danger-300 hover:bg-danger-500/10 px-3 py-1.5 rounded-lg transition-colors font-medium"
+          >
+            Ieșire
+          </button>
+        </div>
       </header>
 
       <div className="max-w-5xl mx-auto px-6 pt-8">

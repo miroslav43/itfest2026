@@ -260,20 +260,23 @@ export function Spinner({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
 
 // ─── Logo ───────────────────────────────────────────────────────────────────
 
-export function Logo({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
+export function Logo({ size = "md", showText = true }: { size?: "sm" | "md" | "lg"; showText?: boolean }) {
   const sizes = { sm: "text-lg", md: "text-xl", lg: "text-2xl" };
-  const iconSizes = { sm: "w-6 h-6", md: "w-8 h-8", lg: "w-10 h-10" };
+  const iconSizes = { sm: "w-7 h-7", md: "w-9 h-9", lg: "w-11 h-11" };
+  const svgSizes = { sm: "w-4 h-4", md: "w-5 h-5", lg: "w-6 h-6" };
 
   return (
     <div className="flex items-center gap-2.5">
-      <div className={`${iconSizes[size]} rounded-xl bg-accent-500/15 border border-accent-500/20 flex items-center justify-center`}>
-        <svg className="w-4 h-4 text-accent-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2" />
-          <path d="M12 8v8" />
-          <path d="M8 12h8" />
+      <div className={`${iconSizes[size]} rounded-xl bg-gradient-to-br from-accent-500/20 to-accent-600/10 border border-accent-500/25 flex items-center justify-center shadow-glow`}>
+        <svg className={`${svgSizes[size]} text-accent-400`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 2v16" />
+          <circle cx="12" cy="20" r="2" fill="currentColor" stroke="none" />
+          <path d="M12 5c0 0-3 1-3 3.5S12 12 12 12s3-1 3-3.5S12 5 12 5z" fill="currentColor" fillOpacity="0.15" />
+          <path d="M8 7.5a4 4 0 018 0" />
+          <path d="M6 10a6 5 0 0112 0" opacity="0.5" />
         </svg>
       </div>
-      <span className={`${sizes[size]} font-bold tracking-tight text-slate-100`}>Solemtrix</span>
+      {showText && <span className={`${sizes[size]} font-bold tracking-tight text-slate-100`}>Solemtrix</span>}
     </div>
   );
 }

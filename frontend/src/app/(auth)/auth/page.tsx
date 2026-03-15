@@ -9,8 +9,6 @@ import type { Role } from "@/types";
 
 export default function AuthPage() {
   const router = useRouter();
-  const [canSignup, setCanSignup] = useState(false);
-  const [checkingCount, setCheckingCount] = useState(true);
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -19,11 +17,7 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (isAuthenticated()) { router.replace("/"); return; }
-    api.get<{ count: number }>("/auth/user-count")
-      .then(({ count }) => setCanSignup(count === 0))
-      .catch(() => setCanSignup(false))
-      .finally(() => setCheckingCount(false));
+    if (isAuthenticated()) router.replace("/");
   }, [router]);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -31,6 +25,9 @@ export default function AuthPage() {
     setError("");
     if (mode === "signup" && password !== confirmPassword) {
       return setError("Parolele nu coincid.");
+    }
+    if (mode === "signup" && password.length < 6) {
+      return setError("Parola trebuie să aibă cel puțin 6 caractere.");
     }
     setLoading(true);
     try {
@@ -44,45 +41,58 @@ export default function AuthPage() {
       else router.push("/");
     } catch (err) {
       if (err instanceof ApiError) setError(err.detail);
-      else if (err instanceof TypeError) setError("Nu s-a putut conecta la server.");
+      else if (err instanceof TypeError) setError("Nu s-a putut conecta la server. Verifică dacă backend-ul rulează.");
       else setError(String(err));
     } finally {
       setLoading(false);
     }
   }
 
-  if (checkingCount) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Spinner size="lg" />
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden">
-      {/* Ambient gradient */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-accent-600/10 rounded-full blur-[120px]" />
         <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] bg-accent-500/8 rounded-full blur-[100px]" />
       </div>
 
-      <div className="relative w-full max-w-[400px] animate-slide-up">
-        {/* Logo */}
+      <div className="relative w-full max-w-[420px] animate-slide-up">
         <div className="flex justify-center mb-10">
           <Logo size="lg" />
         </div>
 
-        {/* Card */}
         <div className="bg-surface-100 border border-white/[0.06] rounded-3xl p-8 shadow-2xl">
+          {/* Tab switcher */}
+          <div className="flex bg-surface-200 rounded-xl p-1 mb-6">
+            <button
+              onClick={() => { setMode("login"); setError(""); }}
+              className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all duration-200 ${
+                mode === "login"
+                  ? "bg-accent-500 text-white shadow-glow"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              Autentificare
+            </button>
+            <button
+              onClick={() => { setMode("signup"); setError(""); }}
+              className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all duration-200 ${
+                mode === "signup"
+                  ? "bg-accent-500 text-white shadow-glow"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              Cont nou
+            </button>
+          </div>
+
           <div className="text-center mb-6">
             <h1 className="text-xl font-bold text-slate-100">
-              {mode === "login" ? "Bine ai revenit" : "Configurare inițială"}
+              {mode === "login" ? "Bine ai revenit" : "Creează cont aparținător"}
             </h1>
             <p className="text-sm text-slate-500 mt-1">
               {mode === "login"
                 ? "Autentifică-te pentru a continua"
-                : "Creează contul de administrator"}
+                : "Înregistrează-te ca aparținător pentru a monitoriza bastoanele"}
             </p>
           </div>
 
@@ -125,40 +135,28 @@ export default function AuthPage() {
 
             <Button type="submit" disabled={loading} size="lg" className="w-full mt-2">
               {loading ? (
-                <>
-                  <Spinner size="sm" />
-                  Se procesează...
-                </>
+                <><Spinner size="sm" /> Se procesează...</>
               ) : mode === "login" ? (
                 "Intră în cont"
               ) : (
-                "Creează cont administrator"
+                "Creează cont"
               )}
             </Button>
           </form>
 
-          {canSignup && (
-            <p className="text-center mt-6 text-sm text-slate-500">
-              {mode === "login" ? "Prima configurare?" : "Ai deja cont?"}{" "}
-              <button
-                className="text-accent-400 font-semibold hover:text-accent-300 transition-colors"
-                onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(""); }}
-              >
-                {mode === "login" ? "Creează cont admin" : "Autentifică-te"}
-              </button>
-            </p>
-          )}
-
-          {!canSignup && mode === "login" && (
-            <p className="text-center mt-6 text-xs text-slate-600 leading-relaxed">
-              Contul tău a fost creat de administrator sau de aparținătorul tău.
-            </p>
+          {mode === "signup" && (
+            <div className="mt-5 flex items-start gap-2.5 py-3 px-4 bg-accent-500/8 border border-accent-500/15 rounded-xl text-xs text-accent-300">
+              <svg className="w-4 h-4 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 16v-4M12 8h.01" />
+              </svg>
+              <span>Contul tău va fi de tip <strong>aparținător</strong>. Vei putea adăuga bastoane și utilizatori nevăzători pe care îi ai în grijă.</span>
+            </div>
           )}
         </div>
 
-        {/* Footer */}
         <p className="text-center text-xs text-slate-600 mt-6">
-          Solemtrix v0.1.0 — Smart Cane Platform
+          Solemtrix v0.2.0 — Smart Cane Platform
         </p>
       </div>
     </div>

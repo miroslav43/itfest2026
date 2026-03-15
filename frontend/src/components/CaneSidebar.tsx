@@ -21,6 +21,7 @@ export default function CaneSidebar({
 }: Props) {
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [role, setRole] = useState<Role | null>(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
     setRole(getRole());
@@ -40,19 +41,26 @@ export default function CaneSidebar({
     }
   }
 
-  return (
-    <aside className="w-64 min-w-64 bg-surface-50 border-r border-white/[0.06] flex flex-col overflow-hidden">
-      {/* Header */}
+  const sidebarContent = (
+    <>
       <div className="flex items-center gap-2 px-5 py-4 border-b border-white/[0.06]">
         <svg className="w-4 h-4 text-accent-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
           <path d="M12 2v20M8 6l4-4 4 4" />
         </svg>
         <span className="text-xs font-bold uppercase tracking-[0.15em] text-slate-400">
-          Dispozitive
+          Bastoane
         </span>
         <span className="ml-auto text-xs font-medium text-slate-600 bg-surface-200 px-2 py-0.5 rounded-full">
           {canes.length}
         </span>
+        <button
+          onClick={() => setMobileOpen(false)}
+          className="lg:hidden w-6 h-6 flex items-center justify-center rounded-lg text-slate-500 hover:text-slate-200 hover:bg-white/[0.06] transition-colors ml-1"
+        >
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+            <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+        </button>
       </div>
 
       {canes.length === 0 ? (
@@ -75,7 +83,7 @@ export default function CaneSidebar({
             return (
               <li key={cane.id} className="group relative mb-0.5">
                 <button
-                  onClick={() => onSelectCane(cane.id)}
+                  onClick={() => { onSelectCane(cane.id); setMobileOpen(false); }}
                   disabled={removingId === cane.id}
                   className={`w-full flex items-center gap-3 px-3 py-3 text-sm rounded-xl transition-all duration-150 text-left pr-9
                     ${isActive
@@ -83,7 +91,7 @@ export default function CaneSidebar({
                       : "text-slate-400 hover:bg-white/[0.04] hover:text-slate-200 border border-transparent"
                     } disabled:opacity-50`}
                 >
-                  <div className={`w-2 h-2 rounded-full shrink-0 ${isActive ? "bg-accent-400" : "bg-slate-600"}`} />
+                  <div className={`w-2 h-2 rounded-full shrink-0 ${isActive ? "bg-accent-400 animate-pulse-slow" : "bg-slate-600"}`} />
                   <div className="flex flex-col min-w-0">
                     <span className="font-medium truncate">{cane.name || "Baston"}</span>
                     <span className="text-[10px] text-slate-600 font-mono truncate">{cane.id}</span>
@@ -112,6 +120,39 @@ export default function CaneSidebar({
           })}
         </ul>
       )}
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Mobile toggle button */}
+      <button
+        onClick={() => setMobileOpen(true)}
+        className="lg:hidden fixed bottom-4 left-4 z-40 w-12 h-12 bg-accent-500 hover:bg-accent-600 text-white rounded-2xl shadow-glow-lg flex items-center justify-center transition-all"
+        aria-label="Deschide lista bastoane"
+      >
+        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+          <path d="M12 2v20M8 6l4-4 4 4" />
+        </svg>
+      </button>
+
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <div
+          className="lg:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm animate-fade-in"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      {/* Desktop sidebar (always visible) */}
+      <aside className="hidden lg:flex w-64 min-w-64 bg-surface-50 border-r border-white/[0.06] flex-col overflow-hidden">
+        {sidebarContent}
+      </aside>
+
+      {/* Mobile sidebar (slide-in) */}
+      <aside className={`lg:hidden fixed inset-y-0 left-0 z-50 w-72 bg-surface-50 border-r border-white/[0.06] flex flex-col overflow-hidden transition-transform duration-300 ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>
+        {sidebarContent}
+      </aside>
+    </>
   );
 }

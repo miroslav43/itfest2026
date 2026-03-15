@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { api, ApiError } from "@/lib/api";
+import { Button, Input, Modal, Spinner } from "@/components/ui";
 import type { Cane } from "@/types";
 
 interface Props {
@@ -40,80 +41,48 @@ export default function EnrollmentModal({ onClose, onEnrolled }: Props) {
   }
 
   return (
-    <div
-      className="fixed inset-0 z-40 flex items-center justify-center bg-black/45 px-4"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-blue-800">Adaugă baston</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-lg leading-none"
-          >
-            ✕
-          </button>
+    <Modal title="Adaugă baston" description="Introdu codul QR de pe baston sau generează unul de test." onClose={onClose}>
+      {error && (
+        <div className="mb-4 px-4 py-3 bg-danger-500/10 border border-danger-500/20 text-danger-400 rounded-xl text-sm font-medium animate-fade-in">
+          {error}
         </div>
+      )}
+      {success && (
+        <div className="mb-4 px-4 py-3 bg-success-500/10 border border-success-500/20 text-success-400 rounded-xl text-sm font-medium animate-fade-in">
+          {success}
+        </div>
+      )}
 
-        <p className="text-sm text-gray-500 mb-4 leading-relaxed">
-          Introdu codul QR de pe baston (ex: <code className="bg-gray-100 px-1 rounded">cane_abc123</code>
-          ) sau generează un cod de test.
-        </p>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <Input
+          type="text"
+          label="Cod baston"
+          value={code}
+          onChange={(e) => setCode(e.target.value)}
+          placeholder="ex: cane_abc123"
+          autoFocus
+        />
 
-        {error && (
-          <div className="mb-3 px-3 py-2 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
-            {error}
-          </div>
-        )}
-        {success && (
-          <div className="mb-3 px-3 py-2 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm">
-            {success}
-          </div>
-        )}
+        <Input
+          type="text"
+          label="Nume baston (opțional)"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="ex: Bastonul lui Andrei"
+        />
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-          <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
-            Cod baston
-            <input
-              type="text"
-              className="px-3 py-2 border border-gray-200 rounded-lg outline-none focus:border-blue-500 text-sm transition-colors"
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              placeholder="ex: cane_abc123"
-              autoFocus
-            />
-          </label>
+        <button
+          type="button"
+          className="text-xs text-accent-400 hover:text-accent-300 text-left font-medium transition-colors"
+          onClick={() => setCode(`cane_demo_${Date.now().toString(36)}`)}
+        >
+          + Generează cod de test
+        </button>
 
-          <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
-            Nume baston{" "}
-            <span className="text-gray-400 font-normal">(opțional)</span>
-            <input
-              type="text"
-              className="px-3 py-2 border border-gray-200 rounded-lg outline-none focus:border-blue-500 text-sm transition-colors"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="ex: Bastonul lui Andrei"
-            />
-          </label>
-
-          {/* Quick-fill helper for testing */}
-          <button
-            type="button"
-            className="text-xs text-blue-500 hover:underline text-left"
-            onClick={() => setCode(`cane_demo_${Date.now().toString(36)}`)}
-          >
-            ↗ Generează cod de test
-          </button>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold rounded-lg transition-colors text-sm mt-1"
-          >
-            {loading ? "Se asociază..." : "Asociază baston"}
-          </button>
-        </form>
-      </div>
-    </div>
+        <Button type="submit" disabled={loading} size="lg" className="w-full">
+          {loading ? <><Spinner size="sm" /> Se asociază...</> : "Asociază baston"}
+        </Button>
+      </form>
+    </Modal>
   );
 }

@@ -321,8 +321,8 @@ function Scene(props: SceneProps) {
       )}
 
       <Grid
-        args={[40, 40]} cellSize={0.5} cellThickness={0.4} cellColor="#c5c0ba"
-        sectionSize={2} sectionThickness={0.8} sectionColor="#b0aba5"
+        args={[40, 40]} cellSize={0.5} cellThickness={0.4} cellColor="#4a4744"
+        sectionSize={2} sectionThickness={0.8} sectionColor="#5a5753"
         fadeDistance={25} fadeStrength={1.5} followCamera={false}
         position={[0, -0.01, 0]} infiniteGrid
       />
@@ -372,7 +372,7 @@ export default function IndoorMapViewer(props: IndoorMapViewerProps) {
     <Canvas
       key={canvasKey} camera={{ position: [5, 5, 5], fov: 50 }} shadows
       gl={{ antialias: true, powerPreference: "high-performance", failIfMajorPerformanceCaveat: false, preserveDrawingBuffer: false }}
-      dpr={[1, 1.5]} style={{ background: "#e8e4df" }}
+      dpr={[1, 1.5]} style={{ background: "#2a2725" }}
     >
       <Scene {...props} onContextLost={handleContextLost} />
     </Canvas>

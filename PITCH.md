@@ -6,7 +6,7 @@
 
 `[Slide: logo Solemtrix + poza bastonului]`
 
-Bună ziua, meu este Razvan Pervulescu, noi suntem **Solemtrix** și am construit, solutia completa pentru persoanele nevăzătoare si am pus-o în obiectul pe care îl folosesc zilnic: bastonul alb.
+Bună ziua, numele meu este Răzvan Pervulescu. Noi suntem **Solemtrix** și am construit soluția completă pentru persoanele nevăzătoare, pusă în obiectul pe care îl folosesc zilnic: bastonul alb.
 
 Mulți știți de .lumen, startup-ul românesc care a strâns peste 14 milioane de euro pentru ochelari inteligenți. E o tehnologie impresionantă, dar o pereche costă aproape **10.000 de euro**, iar majoritatea persoanelor nevăzătoare au folosit toată viața bastonul clasic.
 

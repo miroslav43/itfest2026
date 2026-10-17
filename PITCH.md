@@ -28,7 +28,7 @@ Bastonul **simte** obstacolele din față, din stânga și din dreapta și avert
 
 Pentru persoana nevăzătoare, asta înseamnă **autonomie reală**. Pentru familie înseamnă **liniște și încredere**. Totul cu AI de ultimă generație, la un **preț accesibil**.
 
-`[Slide: screenshot-uri din aplicație]`
+`[Slide: VALIDARE — screenshot-uri din aplicație: ecranul pentru nevăzători, harta aparținătorului, recunoașterea facială, poza bastonului]`
 
 Ce vedeți pe ecran nu e o machetă, ci aplicația funcțională, inclusiv recunoașterea facială de pe camera bastonului.
 

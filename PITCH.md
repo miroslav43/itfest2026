@@ -22,7 +22,7 @@ Vorbim despre aproximativ **3.000** de persoane nevăzătoare doar în Timișoar
 
 Soluția noastră este un dispozitiv complet, care **vede, simte și comunică** pentru utilizatorul nevăzător.
 
-Bastonul **simte** obstacolele din față, din stânga și din dreapta și avertizează prin vibrații în mâner. **Vede**: recunoaște persoanele cunoscute, citește text, descrie ce se află în față și detectează autobuzul care vine în stație. Și **comunică**: vorbește în română, înțelege comenzi vocale ca *„Du-mă la farmacie”* și calculează ruta. Familia are propria aplicație, din care vede locația și adaugă destinații.
+Bastonul **simte** obstacolele din jur și avertizează prin vibrații în mâner. **Vede**: recunoaște persoanele cunoscute, citește text, descrie ce se află în față și detectează autobuzul care vine în stație. Și **comunică**: vorbește în română, înțelege comenzi vocale ca *„Du-mă la farmacie”* și calculează ruta. Familia are propria aplicație, din care vede locația și adaugă destinații.
 
 `[Slide: Value proposition]`
 
@@ -30,17 +30,19 @@ Pentru persoana nevăzătoare, asta înseamnă **autonomie reală**. Pentru fami
 
 `[Slide: VALIDARE — screenshot-uri din aplicație: ecranul pentru nevăzători, harta aparținătorului, recunoașterea facială, poza bastonului]`
 
-Ce vedeți pe ecran nu e o machetă, ci aplicația funcțională, inclusiv recunoașterea facială de pe camera bastonului.
+Ce vedeți pe ecran nu e o machetă, ci aplicația funcțională.
 
 `[Slide: Model de business]`
 
-Vindem **B2G**, către case de asigurări, DGASPC și primării, și **B2B**, către ONG-uri, distribuitori de dispozitive medicale și companii, prin programele de CSR.
+Vindem **B2G**, către case de asigurări și instituții publice, și **B2B**, către ONG-uri, distribuitori și companii, prin CSR.
 
-Un baston ne costă **85 de euro** să-l producem și îl vindem cu **150**, deci câștigăm **65 de euro** pe bucată, plus un abonament opțional pentru funcțiile AI. Ajungem pe **break-even la aproximativ 1.850 de bastoane pe an**, adică doar 2% dintre persoanele nevăzătoare din România, și suntem **profitabili din al doilea an**.
+Și aici e cheia: o casă de asigurări **nu va cumpăra niciodată** ochelari de 10.000 de euro pentru toate cele 90.000 de persoane nevăzătoare din România. Ar însemna **900 de milioane de euro**. Bastoane de 150 de euro pentru toți înseamnă **13,5 milioane**. Pentru ei, e o decizie simplă.
+
+Producem un baston cu **85 de euro** și îl vindem cu **150**: **65 de euro** marjă pe bucată, plus un abonament opțional pentru AI. Ajungem pe **break-even la aproximativ 1.850 de bastoane pe an**, adică doar 2% dintre persoanele nevăzătoare din România, și suntem **profitabili din al doilea an**.
 
 `[Slide: Roadmap]`
 
-Urmează un pilot cu 50 de bastoane în Timișoara la începutul lui 2027, certificarea medicală, lansarea în România la final de 2027 și Europa din 2028.
+Urmează un pilot în Timișoara în 2027, certificarea medicală, lansarea în România și, din 2028, Europa.
 
 `[Slide: Echipa]`
 
@@ -48,7 +50,7 @@ Suntem [Nume] pe hardware, [Nume] pe inteligență artificială, [Nume] pe aplic
 
 `[Slide: What we ask]`
 
-De la dumneavoastră avem nevoie de **10.000 de euro pentru pilot**, de **mentorat** pentru certificare și de **contacte** în instituții și asociații.
+Vă cerem **10.000 de euro pentru pilot**, **mentorat** pentru certificare și **contacte** în instituții.
 
 `[Slide: logo]`
 

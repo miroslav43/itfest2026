@@ -6,7 +6,7 @@
 
 `[Slide: logo Solemtrix + poza bastonului]`
 
-Bună ziua, meu este Razvan Pervulescu, noi suntem **Solemtrix** și am construit, solutia completa pentru persoanele nevăzătoare si am pus-o în obiectul pe care îl folosesc zilnic: bastonul alb.
+Bună ziua, numele meu este Răzvan Pervulescu. Noi suntem **Solemtrix** și am construit soluția completă pentru persoanele nevăzătoare, pusă în obiectul pe care îl folosesc zilnic: bastonul alb.
 
 Mulți știți de .lumen, startup-ul românesc care a strâns peste 14 milioane de euro pentru ochelari inteligenți. E o tehnologie impresionantă, dar o pereche costă aproape **10.000 de euro**, iar majoritatea persoanelor nevăzătoare au folosit toată viața bastonul clasic.
 
@@ -16,13 +16,13 @@ Problema este **izolarea și dependența**. Nu există un echipament accesibil c
 
 `[Slide: Timișoara · România · Europa]`
 
-Vorbim despre aproximativ **3.000** de persoane nevăzătoare doar în Timișoara, **90.000** în România și **peste 30 de milioane** în Europa.
+Vorbim de **3.000** de persoane nevăzătoare în Timișoara, **90.000** în România și **peste 30 de milioane** în Europa.
 
 `[Slide: Soluția]`
 
 Soluția noastră este un dispozitiv complet, care **vede, simte și comunică** pentru utilizatorul nevăzător.
 
-Bastonul **simte** obstacolele din jur și avertizează prin vibrații în mâner. **Vede**: recunoaște persoanele cunoscute, citește text, descrie ce se află în față și detectează autobuzul care vine în stație. Și **comunică**: vorbește în română, înțelege comenzi vocale ca *„Du-mă la farmacie”* și calculează ruta. Familia are propria aplicație, din care vede locația și adaugă destinații.
+Bastonul **simte** obstacolele din jur și avertizează prin vibrații în mâner. **Vede**: recunoaște persoanele cunoscute, citește text, descrie ce se află în față și detectează autobuzul care vine în stație. Și **comunică**: vorbește în română, înțelege comenzi vocale ca *„Du-mă la farmacie”* și calculează ruta. Familia vede locația într-o aplicație dedicată.
 
 `[Slide: Value proposition]`
 
@@ -30,15 +30,15 @@ Pentru persoana nevăzătoare, asta înseamnă **autonomie reală**. Pentru fami
 
 `[Slide: VALIDARE — screenshot-uri din aplicație: ecranul pentru nevăzători, harta aparținătorului, recunoașterea facială, poza bastonului]`
 
-Ce vedeți pe ecran nu e o machetă, ci aplicația funcțională. Cu ajutorul celor de la Centru de Proiecte am reusit sa validam ideea noastra. Am discutat cu oameni implicati in ONG-uri din domeniu si am reusit sa avem un prim MVP.
+Ce vedeți pe ecran nu e o machetă, ci primul nostru MVP. Am validat ideea cu ajutorul Centrului de Proiecte și în discuții cu oameni din ONG-urile din domeniu.
 
 `[Slide: Model de business]`
 
 Vindem **B2G**, către case de asigurări și instituții publice, și **B2B**, către ONG-uri, distribuitori și companii, prin CSR.
 
-Și aici e cheia: o casă de asigurări **nu va cumpăra niciodată** ochelari de 10.000 de euro pentru toate cele 90.000 de persoane nevăzătoare din România. Ar însemna **900 de milioane de euro**. Bastoane de 150 de euro pentru toți înseamnă **13,5 milioane**. Pentru ei, e o decizie simplă.
+O casă de asigurări **nu va cumpăra niciodată** ochelari de 10.000 de euro pentru toate cele 90.000 de persoane nevăzătoare din România. Ar însemna **900 de milioane de euro**. Bastoane de 150 de euro pentru toți înseamnă **13,5 milioane**.
 
-Producem un baston cu **120 de euro** și îl vindem cu **150**: **30 de euro** marjă pe bucată, plus un abonament opțional pentru AI. Ajungem pe **break-even la aproximativ 1.850 de bastoane pe an**, adică doar 2% dintre persoanele nevăzătoare din România, și suntem **profitabili din al doilea an**.
+Producem un baston cu **120 de euro** și îl vindem cu **150**: **30 de euro** marjă pe bucată, plus un abonament opțional pentru AI. Ajungem pe **break-even la aproximativ 4.000 de bastoane pe an**, adică sub 5% dintre persoanele nevăzătoare din România, și suntem **profitabili din al treilea an**.
 
 `[Slide: Roadmap]`
 
@@ -46,7 +46,7 @@ Urmează un pilot în Timișoara în 2027, certificarea medicală, lansarea în 
 
 `[Slide: Echipa]`
 
-Suntem Iasmina pe Software, Gety pe markting, Miro pe inteligență artificială si eu Razvam pe business.
+Suntem Iasmina pe software, Gety pe marketing, Miro pe inteligență artificială și eu, Răzvan, pe business.
 
 `[Slide: What we ask]`
 
@@ -68,20 +68,20 @@ Vă mulțumim. Suntem **Solemtrix**.
 
 | | |
 |---|---|
-| Cost de producție | 85 € (electronică 35, baterie 8, placă și asamblare 10, mâner și baston 20, ambalaj 4, transport și garanție 8) |
-| Preț / marjă | 150 € / 65 € (43%) |
+| Cost de producție | 120 € (electronică 45, baterie 10, placă și asamblare 20, mâner și baston 25, ambalaj 5, transport și garanție 15) |
+| Preț / marjă | 150 € / 30 € (20%) |
 | Abonament AI+ | 4 €/lună, din care ~3 €/lună profit; presupunem 40% abonați |
 | Costuri fixe | 120.000 €/an (echipă de 4: 84.000, marketing 15.000, suport 9.000, cloud 6.000, juridic 6.000) |
 | Investiție unică | 35.000 € (certificare CE 25.000, matriță 10.000) |
-| Break-even | 120.000 ÷ 65 ≈ **1.850 bastoane/an** (~1.500 cu abonamentele) |
+| Break-even | 120.000 ÷ 30 = **4.000 bastoane/an** (~2.700 cu abonamentele) |
 
 | | 2027 | 2028 | 2029 |
 |---|---|---|---|
 | Bastoane vândute | 500 | 2.500 | 8.000 |
 | Venituri | 79.800 € | 408.600 € | 1.334.400 € |
-| **Profit** | **−118.900 €** | **+37.700 €** | **+440.800 €** |
+| **Profit** | **−136.400 €** | **−49.800 €** | **+40.800 €** |
 
-Pierderea din 2027 se acoperă dintr-o rundă pre-seed de ~120.000 €, din granturi și investitori.
+Pierderile din 2027 și 2028 (~186.000 € în total) se acoperă dintr-o rundă pre-seed de ~200.000 €, din granturi și investitori. Dacă juriul întreabă de marja mică: la volume mari, costul de producție scade, iar abonamentul AI aduce venit recurent.
 
 **Răspunsuri scurte**
 - *„De ce nu doar o aplicație pe telefon?”* Pentru că cealaltă mână ține deja bastonul, iar vibrația în mâner e mai rapidă și mai discretă.

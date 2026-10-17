@@ -1,177 +1,179 @@
 # Solemtrix — Pitch pentru juriu
 
-> Durată țintă: **~4 minute** de vorbit, plus **~1 minut** de demo live. După aceea urmează întrebările juriului (3 persoane).
-> Textul pentru vorbit e scris la persoana I plural. Ce e între `[paranteze drepte]` sunt indicații de scenă, nu se citesc.
+> Durată țintă: **~4–5 minute**. Fiecare secțiune poate fi un slide.
+> Ce e între `[paranteze drepte]` sunt indicații pentru voi și nu se citesc.
 
 ---
 
-## 1. Scriptul
-
-### Deschiderea (0:00 – 0:40)
+## 1. Deschiderea
 
 Bună ziua. Noi suntem **Solemtrix** și am construit, probabil, una dintre cele mai complete soluții pentru persoanele nevăzătoare. Am pus-o în obiectul pe care ei îl folosesc deja în fiecare zi: **bastonul alb**.
 
-Mulți dintre dumneavoastră știți de **.lumen**, startup-ul românesc care a strâns **peste 14 milioane de euro** din fonduri europene, de la investitori și prin crowdfunding pentru ochelari inteligenți destinați nevăzătorilor. E o tehnologie impresionantă, dar o pereche costă **aproape 10.000 de euro**.
+Mulți dintre dumneavoastră știți de **.lumen**, startup-ul românesc care a strâns **peste 14 milioane de euro** din fonduri europene, de la investitori și prin crowdfunding pentru ochelari inteligenți. E o tehnologie impresionantă, dar o pereche costă **aproape 10.000 de euro**. În plus, majoritatea persoanelor nevăzătoare au folosit toată viața bastonul clasic, nu un dispozitiv purtat pe cap.
 
-`[pauză]`
+Noi credem că problema nu e lipsa tehnologiei. Problema e că **tehnologia nu ajunge la oameni**.
 
-Noi credem că problema nu e lipsa tehnologiei. Problema e că tehnologia nu ajunge la oameni.
+---
 
-### Problema (0:40 – 1:30)
+## 2. Problema
 
-Vedem trei bariere.
+**Izolare și dependență.**
 
-**Prima e prețul.** Chiar dacă statul decontează dispozitivul, bugetul rămâne limitat. Cu banii pentru **o singură pereche de ochelari**, putem echipa **peste 60 de oameni** cu bastonul nostru. Pentru orice casă de asigurări, minister sau ONG, asta înseamnă de 60 de ori mai mulți oameni ajutați cu același buget.
+- **Nu există un echipament accesibil care să ofere autonomie reală.** Persoana nevăzătoare depinde de altcineva pentru drumuri pe care noi le facem fără să ne gândim.
+- **Aparținătorul nu știe în timp real** unde se află persoana sau dacă e în siguranță.
+- **Tehnologia existentă e foarte scumpă.** Ochelarii inteligenți costă în jur de 10.000 €, iar bastoanele inteligente de import trec de 700 €. Cei care au cea mai mare nevoie de ele nu și le permit.
 
-**A doua e obișnuința.** Majoritatea persoanelor nevăzătoare folosesc bastonul alb de zeci de ani. Le-ai cere să-l înlocuiască cu un dispozitiv purtat pe cap, cu o curbă de învățare nouă, iar mulți dintre ei sunt vârstnici. Aceasta e o schimbare de comportament uriașă. Noi nu le cerem să renunțe la nimic.
+---
 
-**A treia e izolarea.** Familia nu știe unde e persoana, dacă a ajuns unde trebuia sau dacă are nevoie de ajutor.
+## 3. Grupul țintă
 
-`[pauză]`
+| Zonă | Persoane nevăzătoare sau cu deficiențe de vedere |
+|---|---|
+| **Timișoara** (filiala Timiș–Caraș-Severin) | **~3.000** de persoane în evidența asociației nevăzătorilor |
+| **România** | **~90.000** de persoane cu deficiențe de vedere înregistrate |
+| **Europa** | **peste 30 de milioane** de persoane nevăzătoare și slab-văzătoare |
 
-Așa că ne-am pus întrebarea pe dos: **în loc să înlocuim bastonul, de ce să nu-l facem inteligent?**
+`[Pe slide: o hartă cu trei cercuri concentrice: Timișoara → România → Europa.]`
 
-### Soluția (1:30 – 3:00)
+Pornim de acasă, din Timișoara, unde putem testa direct cu comunitatea. Piața reală, însă, este europeană.
 
-Solemtrix are trei piloni: **simte, vede și conectează**.
+---
 
-**1. Simte: obstacole prin vibrații.**
-Bastonul are **trei senzori ultrasonici**, pe față, stânga și dreapta, plus **patru motoare de vibrație** în mâner. Un obstacol pe stânga se simte ca o vibrație pe stânga. Dacă obstacolele sunt din toate părțile, la sub 30 de centimetri, intră o alertă critică separată. Utilizatorul nu trebuie să învețe nimic nou: îl simte direct în mână.
+## 4. Soluția
 
-**2. Vede: o cameră cu inteligență artificială.**
-Pe baston avem o cameră, iar inteligența artificială din spatele ei:
-- **recunoaște persoanele cunoscute** și îi spune la ureche, în română: *„Miroslav e în fața ta”*;
-- **citește text**, adică afișe, etichete și indicatoare, și face un rezumat;
-- **descrie scena** din fața utilizatorului;
+**Un dispozitiv complet care vede, simte și comunică pentru utilizatorul nevăzător.**
+
+Bastonul **simte**:
+- detectează obstacolele din față, din stânga și din dreapta;
+- avertizează prin **vibrații în mâner**, pe partea pe care e obstacolul.
+
+Bastonul **vede**:
+- **recunoaște persoanele cunoscute** și spune cine e în față;
+- **citește text**: afișe, etichete, indicatoare;
+- **descrie** ce se află în fața utilizatorului;
 - **detectează autobuzul** care vine în stație.
 
-Vocea iese printr-un difuzor Bluetooth integrat în baston.
-
-Esențial: **creierul nu e în baston.** Bastonul are doar senzori, cameră și motoare ieftine, iar procesarea AI se face pe server. Așa ținem prețul hardware-ului jos, iar bastonul primește funcții noi fără să fie schimbat.
-
-**3. Conectează: o aplicație pentru două tipuri de utilizatori.**
-- **Pentru persoana nevăzătoare** am făcut o interfață gândită pentru cineva care nu vede ecranul. Pornește cu un cuvânt de activare și cu **comenzi vocale în română**: *„Du-mă la farmacie”*, *„Unde sunt?”*, *„Oprește navigarea”*. Orice buton funcționează cu dublă atingere: prima atingere spune ce face butonul, a doua îl confirmă, cu feedback prin vibrații. Aplicația calculează ruta pe jos și o anunță vocal.
-- **Pentru aparținător** există o hartă cu locația persoanei și o alertă dacă bastonul nu mai trimite date de 5 minute. Aparținătorul poate adăuga destinații, de exemplu *„Acasă”*, *„Policlinica”* sau *„Piața”*, iar persoana nevăzătoare le alege apoi cu vocea.
-
-Am început să lucrăm și la **navigarea în interior**: am scanat 3D o clădire și o putem vizualiza cu traseu și obstacole marcate pe ea.
-
-### Demo live (3:00 – 4:00)
-
-`[Vezi secțiunea 2 pentru ordinea exactă.]`
-
-### Modelul de business și închiderea (4:00 – 4:40)
-
-Ținta noastră de preț este **150 de euro** pentru baston, adică același obiect pe care îl folosesc azi, plus inteligență. La prețul ăsta intră pe lista dispozitivelor asistive compensate și poate fi cumpărat în volum de ONG-uri și de autorități.
-
-Pe scurt: **.lumen a construit un dispozitiv de 10.000 de euro pentru câțiva oameni. Noi vrem să facem unul de 150 de euro pentru toți ceilalți.**
-
-Vă mulțumim. Suntem Solemtrix și abia așteptăm întrebările dumneavoastră.
+Bastonul **comunică**:
+- **vorbește în română**, printr-un difuzor integrat;
+- primește **comenzi vocale**: *„Du-mă la farmacie”*, *„Unde sunt?”*;
+- **calculează ruta** spre destinațiile salvate;
+- printr-o **aplicație pentru familie**, aparținătorul vede locația și poate adăuga destinații.
 
 ---
 
-## 2. Demo live — ordinea recomandată
+## 5. Value proposition
 
-Pregătește totul **înainte** să intri. Fiecare pas ar trebui să ia 10–15 secunde.
-
-| # | Ce arăți | Ce spui | Pregătire |
-|---|---|---|---|
-| 1 | Pui mâna în fața senzorului din față, apoi a celui din stânga, și motorul corespunzător vibrează | „Obstacol în față… obstacol pe stânga.” | ESP32 pornit, backend-ul ESP rulând, haptic activat (`POST /haptic/enable`). **Ține mâna 3 secunde**: bucla verifică distanța doar la 2,5 s. |
-| 2 | Un coleg cu poza în `known_faces/` intră în cadru, iar bastonul spune *„… e în fața ta”* | „Recunoaște persoanele apropiate.” | Boxa Bluetooth conectată ca ieșire audio pe Mac și o lumină bună în sală. |
-| 3 | Pe telefon, ca utilizator nevăzător: *„Alexa, du-mă la farmacie”*, apoi aplicația anunță ruta | „Navigare doar cu vocea, fără să vadă ecranul.” | Destinația „Farmacie” creată din contul de aparținător și cheia Picovoice setată. |
-| 4 | Pe laptop, contul de aparținător: harta cu bastonul | „Familia vede unde e.” | **Pornește `/simulator` înainte** (vezi mai jos de ce). |
-| 5 | (opțional) Harta 3D de interior | „Următorul pas: navigare în interior.” | Pagina `/indoor-map` deja încărcată, pentru că modelul are 16 MB. |
-
-**Dacă ceva pică:** ai pregătit un video de rezervă de 30 de secunde cu pașii 1 și 2.
-
----
-
-## 3. Ce poți spune și ce nu ⚠️
-
-Juriile de hackathon pun întrebări tehnice și pierzi credibilitate mai repede pe o afirmație falsă decât pe o funcție lipsă. Mai jos e ce **există efectiv în cod** acum.
-
-### ✅ Poți spune fără grijă
-- 3 senzori ultrasonici și 4 motoare de vibrație direcționale, inclusiv alerta critică.
-- Recunoaștere facială cu anunț vocal în română prin difuzorul bastonului.
-- OCR cu rezumat GPT, descrierea scenei și detecția autobuzului: funcționează ca demo-uri AI.
-- Aplicația cu 3 roluri (admin, aparținător, nevăzător) și interfața accesibilă: cuvânt de activare, comenzi vocale în română, dublă atingere, voce ElevenLabs.
-- Destinații gestionate de aparținător și calculul rutei pe jos.
-- Vizualizarea unei scanări 3D de interior.
-
-### ⚠️ Formulează cu grijă
-| Afirmație | Realitatea din cod | Cum o spui corect |
-|---|---|---|
-| „Urmărire GPS în timp real” | Bastonul **nu are modul GPS**. Locația din demo vine din `/simulator`. | „Aplicația primește locația bastonului; în prototip o simulăm, iar în versiunea finală vine de la telefonul utilizatorului sau de la un modul GPS.” |
-| „Aplicația e conectată la baston” | Aplicația web și hardware-ul **nu comunică încă**. | „Am construit cele două componente în paralel; integrarea e următorul pas.” |
-| „Bastonul citește textul cu voce tare” | Rezumatul OCR și descrierea scenei apar **doar pe ecranul Mac-ului**, nu sunt rostite. | Spune „citește” și „descrie”. Dacă ai timp înainte de pitch, leagă `gpt_engine` de `tts.speak`: e o modificare mică și face demo-ul mult mai puternic. |
-| „Navigare pas cu pas” | E o **prezentare a rutei** (distanță și timp estimat), fără instrucțiuni la fiecare intersecție. | „Calculează ruta și o anunță vocal.” |
-| „Reacție instantanee la obstacole” | Bucla haptică verifică distanța la **2,5 secunde**. | Nu da cifre. Dacă te întreabă: „În prototip sondăm rar din cauza WiFi-ului; în produs logica merge direct pe ESP32, fără latență de rețea.” |
-| „Măsoară calitatea aerului, temperatura etc.” | Senzorii sunt citiți, dar **nimic nu îi folosește**. | Nu-i menționa în pitch. Ține-i pentru întrebări, ca bază pentru funcții viitoare. |
-| „Merge fără laptop” | AI-ul rulează pe un **Mac din aceeași rețea WiFi**. | „Procesarea AI e pe server; în produs, rolul acesta îl preia telefonul și cloud-ul.” |
-| „150 de euro” | **Nu există un buget de componente (BOM) în repo.** | Fă calculul de mai jos înainte de pitch și spune „țintă” sau „estimat”. |
-
----
-
-## 4. Calculul de cost (de verificat!)
-
-Juriul **va întreba** de unde vin cei 150 de euro. Mai jos e o estimare orientativă cu prețuri de retail pentru componente. **Înlocuiește-o cu prețurile reale pe care le-ați plătit.**
-
-| Componentă | Estimare |
+| Pentru cine | Ce primește |
 |---|---|
-| ESP32 DevKit | ~8 € |
-| ESP32-CAM (AI Thinker) | ~8 € |
-| 3× HC-SR04 | ~6 € |
-| 4× motor de vibrație + MOSFET-uri | ~6 € |
-| Amplificator PAM8403 + difuzor | ~4 € |
-| Baterie Li-ion + modul de încărcare | ~10 € |
-| Carcasă de mâner (print 3D) + cablaj | ~10 € |
-| Baston alb pliabil | ~20 € |
-| **Total componente** | **~70 €** |
-
-Astfel, 150 € înseamnă ~70 € componente plus asamblare, garanție și marjă. Mai rămâne de lămurit **costul AI per utilizator** (OpenAI și ElevenLabs), pe care îl puteți acoperi printr-un abonament opțional pentru funcțiile AI sau prin modele care rulează local pe telefon.
+| 🧑‍🦯 **Persoana nevăzătoare** | **Autonomie reală.** Se deplasează singură, cu același baston cu care e obișnuită. |
+| 👨‍👩‍👧 **Familia** | **Liniște și încredere.** Știe unde e persoana dragă și că e în siguranță. |
+| 💶 **Cumpărătorul** (stat, ONG, asigurator) | **Preț accesibil.** Țintim **~150 €**, deci cu bugetul pentru o pereche de ochelari inteligenți se pot echipa **peste 60 de oameni**. |
+| 🤖 **Tehnologia** | **AI și algoritmi de ultimă generație**: recunoaștere facială, citire de text, descrierea scenei, voce naturală în română. |
 
 ---
 
-## 5. Întrebări probabile de la juriu
+## 6. Validare
 
-**„De ce nu doar o aplicație pe telefon?”**
-Pentru că telefonul ține ocupată o mână, iar cealaltă ține bastonul. Bastonul e deja în mână, iar vibrația direcțională în mâner e mai rapidă și mai discretă decât orice notificare de pe telefon.
+`[Aici intră screenshot-urile din aplicație. Recomandăm:]`
 
-**„Există deja bastoane inteligente, de exemplu WeWALK.”**
-Da, și le respectăm. Dar WeWALK costă **între ~600 și ~850 de lire**, iar asistentul AI vine cu abonament anual. Noi țintim **150 de euro** și avem pe lângă ce oferă ei recunoaștere facială și o aplicație pentru aparținător.
+1. **Ecranul persoanei nevăzătoare:** butoanele mari și comanda vocală activă.
+2. **Ruta calculată** spre o destinație, cu mesajul vocal afișat.
+3. **Harta aparținătorului** cu locația bastonului.
+4. **Gestionarea destinațiilor:** „Acasă”, „Farmacie”, „Policlinica”.
+5. **Recunoașterea facială** de pe camera bastonului (cadrul cu numele persoanei).
+6. **Panoul de administrare** cu statisticile.
+7. **Harta 3D de interior** (opțional).
+8. **O poză cu bastonul fizic**, prototipul.
 
-**„.lumen spune că în România dispozitivul va fi decontat integral.”**
-*(Fondatorul .lumen chiar a declarat asta, așa că fii pregătit.)* Chiar dacă e decontat, cineva tot plătește 10.000 de euro. Același buget echipează peste 60 de oameni cu Solemtrix. Nu concurăm cu .lumen pe tehnologie, concurăm pe **acces**.
-
-**„Ce se întâmplă fără internet?”**
-Detecția obstacolelor și vibrațiile nu au nevoie de cloud. În produsul final, logica rulează direct pe ESP32. Funcțiile AI cer conexiune; recunoașterea facială poate rula local.
-
-**„Cât ține bateria?”**
-*Măsurați înainte!* Dacă nu ați măsurat, spuneți cinstit: „Nu am măsurat încă pe prototip; ținta noastră e o zi întreagă de folosire.”
-
-**„Ați testat cu persoane nevăzătoare?”**
-*Dacă nu:* „Încă nu. Primul pas după hackathon e un pilot cu [o asociație locală / UNNR].” Juriul apreciază un răspuns cinstit plus un plan concret.
-
-**„Care e următorul pas?”**
-1. Integrarea bastonului cu aplicația: locația și evenimentele de pe baston ajung la aparținător.
-2. Logica de obstacole direct pe ESP32, pentru reacție instantanee.
-3. Un pilot cu utilizatori reali.
-4. Înscrierea pe lista de dispozitive asistive compensate.
+`[Dacă reușiți să vorbiți înainte cu cineva de la Asociația Nevăzătorilor Timiș, chiar și un singur citat de feedback aici valorează mai mult decât toate screenshot-urile.]`
 
 ---
 
-## 6. Sfaturi de livrare
+## 7. Modelul de business: B2B și B2G
 
-- **Spune „persoane nevăzătoare”**, nu „orbi” și nici „asistați sociali”. Dacă în juriu e cineva din domeniu, contează.
-- **Nu ataca .lumen.** Formula *„e o tehnologie impresionantă, dar…”* te face să pari matur. Juriul poate avea legături cu ei.
-- **Cifra de ținut minte:** *1 pereche de ochelari = 60+ bastoane Solemtrix.* Repet-o la final.
-- **Demo-ul bate slide-urile.** Dacă rămâi fără timp, taie din secțiunea „Soluția”, nu din demo.
-- **Împărțiți rolurile:** unul vorbește, altul face demo-ul. Nimeni nu scrie la tastatură în timp ce vorbește.
+**B2G (instituții publice):**
+- Includerea pe **lista dispozitivelor asistive compensate** (CNAS și programele pentru persoanele cu dizabilități).
+- Achiziții prin **DGASPC**, primării și consilii județene, pentru beneficiarii lor.
+- Proiecte cu **fonduri europene** pentru incluziune și accesibilitate.
+
+**B2B (organizații și companii):**
+- **ONG-uri și asociații** de nevăzători, care cumpără în volum pentru membrii lor.
+- **Distribuitori de dispozitive medicale** și magazine de optică.
+- **Companii, prin programele de CSR**, care donează bastoane comunităților.
+
+**Surse de venit:** vânzarea bastonului (~150 €), plus un **abonament opțional** pentru funcțiile AI avansate și pentru aplicația aparținătorului.
 
 ---
 
-### Surse pentru cifrele din pitch
+## 8. Roadmap
 
-- .lumen, finanțare EIC de 9,7 mil. € — [Romania Insider](https://www.romania-insider.com/dot-lumen-seedblink-round-jul-2024)
-- .lumen, rundă de 5 mil. € în 2024 (EIC, Venture to Future Fund și 1 mil. € prin crowdfunding pe SeedBlink) — [Vestbee](https://www.vestbee.com/blog/articles/dot-lumen-secures-5-m), [EIC Scaling Club](https://eicscalingclub.eu/news/dotlumen-raises-5-million)
-- Prețul ochelarilor .lumen: **9.999 €** la rezervare — [New Atlas](https://newatlas.com/wearables/dotlumen-ai-glasses-blind-independence/); interval 5.000–10.000 € și planul de decontare în România — [AIN interview, feb. 2025](https://en.ain.ua/2025/02/20/interview-with-lumen/)
-- Prețul WeWALK Smart Cane 2: 599–849 £ fără TVA — [Sight & Sound](https://www.sightandsound.co.uk/product/wewalk/), [RNIB](https://shop.rnib.org.uk/products/wewalk-smart-cane-2-ai)
+`[Ajustați datele după cum vă organizați.]`
+
+| Etapă | Când | Ce |
+|---|---|---|
+| ✅ **Prototip** | Octombrie 2026 | Baston funcțional, aplicație, AI. *Ce prezentăm azi.* |
+| **Integrare** | T4 2026 | Bastonul și aplicația legate complet; GPS integrat. |
+| **Pilot Timișoara** | T1 2027 | 20–50 de bastoane testate cu Asociația Nevăzătorilor Timiș. |
+| **Certificare** | T2–T3 2027 | Certificare CE ca dispozitiv medical și înscrierea pe lista de compensare. |
+| **Lansare România** | T4 2027 | Primele contracte B2G și B2B. |
+| **Europa** | 2028 | Extindere în țările cu programe de decontare pentru dispozitive asistive. |
+
+---
+
+## 9. Echipa
+
+`[Completați: nume, rol, o propoziție despre fiecare.]`
+
+| Nume | Rol |
+|---|---|
+| [Nume] | Hardware și firmware |
+| [Nume] | AI și backend |
+| [Nume] | Aplicație mobilă și web |
+| [Nume] | Business și pitch |
+
+---
+
+## 10. What we ask și concluzia
+
+**Ce vă cerem:**
+`[Alegeți ce se potrivește concursului:]`
+- **Finanțare de ~10.000 €** pentru primele 50 de bastoane de pilot și testarea cu utilizatori reali;
+- **mentorat** pentru certificarea medicală și pentru accesul la achizițiile publice;
+- **parteneri**: introduceri la DGASPC, la asociațiile de nevăzători și la companii cu programe de CSR.
+
+**Concluzia:**
+
+.lumen a construit un dispozitiv de 10.000 de euro pentru câțiva oameni. **Noi construim unul de 150 de euro pentru toți ceilalți.**
+
+Autonomie pentru ei, liniște pentru familiile lor.
+
+Vă mulțumim. Suntem **Solemtrix**.
+
+---
+---
+
+## Note pentru echipă (nu se prezintă)
+
+**De evitat în fața juriului** (prototipul nu face încă asta):
+- Nu spuneți că **bastonul are GPS**. Locația din aplicație e simulată acum, deci prezentați-o ca funcție a aplicației sau ca pas din roadmap.
+- Nu spuneți că **bastonul și aplicația sunt deja conectate**. În roadmap, asta e etapa „Integrare”.
+- Cei **150 €** sunt **o țintă**. Calculați costul real al componentelor înainte (estimarea noastră e ~70 €).
+
+**Întrebări probabile:**
+- *„De ce nu doar o aplicație pe telefon?”* Pentru că cealaltă mână ține deja bastonul, iar vibrația în mâner e mai rapidă și mai discretă.
+- *„Există WeWALK.”* Costă 600–850 £, iar asistentul AI vine cu abonament anual. Noi țintim 150 € și avem în plus recunoaștere facială și aplicația pentru familie.
+- *„.lumen spune că va fi decontat integral în România.”* Chiar dacă e decontat, cineva tot plătește 10.000 €. Același buget echipează peste 60 de oameni cu Solemtrix.
+- *„Ați testat cu nevăzători?”* Răspundeți cinstit, apoi prezentați pilotul din Timișoara.
+
+**Formulare:** spuneți „persoane nevăzătoare”, nu „orbi” sau „asistați sociali”. Nu atacați .lumen: formula „impresionant, dar…” vă face să păreți maturi.
+
+---
+
+### Surse
+
+- Timișoara, ~3.000 de persoane în evidența filialei (cifră din presă, de acum câțiva ani) — [Tion](https://www.tion.ro/stirile-judetului-timis/problemele-nevazatorilor-din-timisoara-nu-suntem-bagati-in-seama-nu-dorim-mila-putem-fi-utili-si-noi-societatii-66713/)
+- România, ~90.000 de persoane cu deficiențe de vedere (date ANPD) — [Code for Romania](https://code4.ro/ro/raport-dizabilitatiprobleme-de-constientizare); 96.000 în 2018 — [Special Olympics](https://angajare.specialolympics.ro/ghid-de-angajare/)
+- Europa, peste 30 de milioane — [European Blind Union](https://www.euroblind.org/about-blindness-and-partial-sight/facts-and-figures)
+- .lumen, 9,7 mil. € din EIC — [Romania Insider](https://www.romania-insider.com/dot-lumen-seedblink-round-jul-2024); 5 mil. € în 2024, inclusiv crowdfunding pe SeedBlink — [Vestbee](https://www.vestbee.com/blog/articles/dot-lumen-secures-5-m)
+- Prețul .lumen, 9.999 € — [New Atlas](https://newatlas.com/wearables/dotlumen-ai-glasses-blind-independence/); planul de decontare — [AIN](https://en.ain.ua/2025/02/20/interview-with-lumen/)
+- Prețul WeWALK, 599–849 £ — [Sight & Sound](https://www.sightandsound.co.uk/product/wewalk/)

@@ -6,7 +6,7 @@
 
 `[Slide: logo Solemtrix + poza bastonului]`
 
-Bună ziua, numele meu este Răzvan Pervulescu. Noi suntem **Solemtrix** și am construit soluția completă pentru persoanele nevăzătoare, pusă în obiectul pe care îl folosesc zilnic: bastonul alb.
+Bună ziua, meu este Razvan Pervulescu, noi suntem **Solemtrix** și am construit, solutia completa pentru persoanele nevăzătoare si am pus-o în obiectul pe care îl folosesc zilnic: bastonul alb.
 
 Mulți știți de .lumen, startup-ul românesc care a strâns peste 14 milioane de euro pentru ochelari inteligenți. E o tehnologie impresionantă, dar o pereche costă aproape **10.000 de euro**, iar majoritatea persoanelor nevăzătoare au folosit toată viața bastonul clasic.
 
@@ -30,7 +30,7 @@ Pentru persoana nevăzătoare, asta înseamnă **autonomie reală**. Pentru fami
 
 `[Slide: VALIDARE — screenshot-uri din aplicație: ecranul pentru nevăzători, harta aparținătorului, recunoașterea facială, poza bastonului]`
 
-Ce vedeți pe ecran nu e o machetă, ci aplicația funcțională.
+Ce vedeți pe ecran nu e o machetă, ci aplicația funcțională. Cu ajutorul celor de la Centru de Proiecte am reusit sa validam ideea noastra. Am discutat cu oameni implicati in ONG-uri din domeniu si am reusit sa avem un prim MVP.
 
 `[Slide: Model de business]`
 
@@ -38,7 +38,7 @@ Vindem **B2G**, către case de asigurări și instituții publice, și **B2B**, 
 
 Și aici e cheia: o casă de asigurări **nu va cumpăra niciodată** ochelari de 10.000 de euro pentru toate cele 90.000 de persoane nevăzătoare din România. Ar însemna **900 de milioane de euro**. Bastoane de 150 de euro pentru toți înseamnă **13,5 milioane**. Pentru ei, e o decizie simplă.
 
-Producem un baston cu **85 de euro** și îl vindem cu **150**: **65 de euro** marjă pe bucată, plus un abonament opțional pentru AI. Ajungem pe **break-even la aproximativ 1.850 de bastoane pe an**, adică doar 2% dintre persoanele nevăzătoare din România, și suntem **profitabili din al doilea an**.
+Producem un baston cu **120 de euro** și îl vindem cu **150**: **30 de euro** marjă pe bucată, plus un abonament opțional pentru AI. Ajungem pe **break-even la aproximativ 1.850 de bastoane pe an**, adică doar 2% dintre persoanele nevăzătoare din România, și suntem **profitabili din al doilea an**.
 
 `[Slide: Roadmap]`
 
@@ -46,7 +46,7 @@ Urmează un pilot în Timișoara în 2027, certificarea medicală, lansarea în 
 
 `[Slide: Echipa]`
 
-Suntem [Nume] pe hardware, [Nume] pe inteligență artificială, [Nume] pe aplicație și [Nume] pe business.
+Suntem Iasmina pe Software, Gety pe markting, Miro pe inteligență artificială si eu Razvam pe business.
 
 `[Slide: What we ask]`
 
